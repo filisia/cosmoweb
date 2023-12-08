@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { scanForDevices, connectToDevice, startNotifications, stopNotifications, writeToCharacteristic } from './BLEService';
+import BrowserSpecificErrorMessage from './BrowserSpecificErrorMessage';
 import './style.css';
 
 function App() {
@@ -13,27 +14,13 @@ function App() {
   const [server, setServer] = useState(null); // State for the server
   const [selectedColor, setSelectedColor] = useState('');
   const [luminosity, setLuminosity] = useState(0);
+  const [bleError, setBleError] = useState(null);
 
-  // useEffect(() => {
-  //   if (interpretedValue != null) {
-  //     jump(interpretedValue);
-  //   }
-  // }, [interpretedValue]); // Re-run the effect when interpretedValue changes
 
-  // Function to make Mario jump
-  function jump(height) {
+  const style = {
+    display: 'none', // initially hidden
 
-    let mario = marioRef.current;
-    // console.log(mario);
-    if (mario) {
-      // Apply dynamic style for jump height
-      mario.style.bottom = `${height * 5}px`; // Scale the jump height
-
-      // setTimeout(() => {
-      //   mario.style.bottom = '0px'; // Reset after jump
-      // }, 300); // Adjust the time to match the jump duration
-    }
-  }
+  };
 
   const handleConnect = async () => {
     try {
@@ -48,7 +35,12 @@ function App() {
 
       setIsListening(true); // Update the isListening
     } catch (error) {
-      console.error('Connection failed:', error);
+      console.error('Connection failed:', error.message);
+      setBleError(error); // Set the error state
+
+
+
+
     }
   };
 
@@ -164,59 +156,6 @@ function App() {
   };
 
 
-  //   return (
-  //     <div>
-  //       <h1>Interacting with Cosmo</h1>
-  //       <button onClick={handleConnect}>Connect to Cosmo</button>
-  //       <button onClick={handleStartListening} disabled={!characteristic || isListening}>Start Listening</button>
-  //       <button onClick={handleStopListening} disabled={!characteristic || !isListening}>Stop Listening</button>
-
-  //       {interpretedValue !== null && (
-  //         <>
-  //           <div>
-  //             Press Value: {interpretedValue}
-  //           </div>
-  //           <div>
-  //             <label htmlFor="color-select">Set Color: </label>
-  //             <select id="color-select" value={selectedColor} onChange={handleColorChange}>
-  //               <option value="--none--">--none--</option>
-  //               <option value="blue">Blue</option>
-  //               <option value="red">Red</option>
-  //               <option value="green">Green</option>
-  //               <option value="white">White</option>
-  //               <option value="orange">Orange</option>
-  //               <option value="darkYellow">Dark Yellow</option>
-  //               <option value="purple">Purple</option>
-  //               <option value="pink">Pink</option>
-  //               <option value="fuchsia">Fuchsia</option>
-  //               <option value="turquoise">Turquoise</option>
-  //               <option value="lightGreen">Light Green</option>
-  //               <option value="fluorescentGreen">Fluorescent Green</option>
-  //               <option value="yellow">Yellow</option>
-  //               <option value="lightPurple">Light Purple</option>
-  //               <option value="iceWhite">Ice White</option>
-  //             </select>
-  //           </div>
-  //           <div>
-  //             <label htmlFor="luminosity-range">Set Luminosity (0-64): </label>
-  //             <input
-  //               type="range"
-  //               id="luminosity-range"
-  //               min="0"
-  //               max="64"
-  //               value={luminosity}
-  //               onChange={handleLuminosityChange}
-  //             />
-  //             <span>{luminosity}</span>
-  //             <button onClick={handleSetLuminosity}>Set Luminosity</button>
-  //           </div>
-  //         </>
-  //       )}
-
-  //     </div >
-
-  //   );
-  // }
 
   return (
     <div className="p-4">
@@ -270,6 +209,10 @@ function App() {
           </div>
         </div>
       )}
+
+      {bleError && <BrowserSpecificErrorMessage error={bleError} />}
+
+
 
     </div>
   );

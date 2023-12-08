@@ -4,7 +4,7 @@ export const scanForDevices = async () => {
       const device = await navigator.bluetooth.requestDevice({ filters });
       return device;
     } catch (error) {
-      console.error('Error in scanning for BLE devices:', error);
+      // console.error('Error in scanning for BLE devices:', error);
       throw error;
     }
 };
