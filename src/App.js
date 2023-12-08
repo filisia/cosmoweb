@@ -11,13 +11,13 @@ function App() {
   const kSensorCharacteristicUUID = '00001524-1212-efde-1523-785feabcd123';
   const kCommandCharacteristicUUID = '00001528-1212-efde-1523-785feabcd123';
   const [server, setServer] = useState(null); // State for the server
+  const [selectedColor, setSelectedColor] = useState('');
 
-
-  useEffect(() => {
-    if (interpretedValue != null) {
-      jump(interpretedValue);
-    }
-  }, [interpretedValue]); // Re-run the effect when interpretedValue changes
+  // useEffect(() => {
+  //   if (interpretedValue != null) {
+  //     jump(interpretedValue);
+  //   }
+  // }, [interpretedValue]); // Re-run the effect when interpretedValue changes
 
   // Function to make Mario jump
   function jump(height) {
@@ -40,7 +40,7 @@ function App() {
       const device = await scanForDevices();
       const connectedServer = await device.gatt.connect();
       setServer(connectedServer); // Set the server state
-    
+
       const char_sensor = await startNotifications(connectedServer, serviceUUID,
         kSensorCharacteristicUUID, handleCharacteristicValueChanged_sensor);
       setCharacteristic(char_sensor);
@@ -75,16 +75,75 @@ function App() {
   }
 
   // Function to write to a characteristic
-  const handleWriteColorToCharacteristic = async () => {
+  const handleWriteColorToCharacteristic = async (colorParameter) => {
     try {
-      const valueToWrite = [2, 0, 0, 4, 1];
-      
-      await writeToCharacteristic(server, serviceUUID, kCommandCharacteristicUUID, valueToWrite);
-      // console.log('Value written to characteristic');
+      let commandValues;
+      switch (colorParameter) {
+        case 'blue':
+          commandValues = [2, 0, 0, 4, 1];
+          break;
+        case 'red':
+          commandValues = [2, 4, 0, 0, 1];
+          break;
+        case 'green':
+          commandValues = [2, 0, 4, 0, 1];
+          break;
+        case 'white':
+          commandValues = [2, 4, 4, 4, 1];
+          break;
+        case 'orange':
+          commandValues = [2, 4, 1, 0, 1];
+          break;
+        case 'darkYellow':
+          commandValues = [2, 4, 4, 0, 1];
+          break;
+        case 'purple':
+          commandValues = [2, 4, 0, 4, 1];
+          break;
+        case 'pink':
+          commandValues = [2, 4, 1, 1, 1];
+          break;
+        case 'fuchsia':
+          commandValues = [2, 4, 0, 1, 1];
+          break;
+        case 'turquoise':
+          commandValues = [2, 0, 3, 4, 1];
+          break;
+        case 'lightGreen':
+          commandValues = [2, 1, 4, 1, 1];
+          break;
+        case 'fluorescentGreen':
+          commandValues = [2, 2, 4, 0, 1];
+          break;
+        case 'yellow':
+          commandValues = [2, 4, 3, 0, 1];
+          break;
+        case 'lightPurple':
+          commandValues = [2, 3, 1, 4, 1];
+          break;
+        case 'iceWhite':
+          commandValues = [2, 2, 3, 4, 1];
+          break;
+        default:
+          commandValues = [2, 0, 0, 0, 1]; // Default command
+      }
+
+      await writeToCharacteristic(server, serviceUUID, kCommandCharacteristicUUID, commandValues);
+      console.log('Value written to characteristic:', colorParameter);
     } catch (error) {
       console.error('Error writing to characteristic:', error);
     }
   };
+
+  const handleColorChange = (event) => {
+    const color = event.target.value;
+    setSelectedColor(color);
+    if (color !== '--none--') {
+      handleWriteColorToCharacteristic(color);
+    }
+  };
+
+
 
   return (
     <div>
@@ -93,9 +152,27 @@ function App() {
       <button onClick={handleStartListening} disabled={!characteristic || isListening}>Start Listening</button>
       <button onClick={handleStopListening} disabled={!characteristic || !isListening}>Stop Listening</button>
       {interpretedValue !== null && <p>Press Value: {interpretedValue}</p>}
-      <div id="mario-character" ref={marioRef} style={{ position: 'absolute', bottom: '0px' }}></div> {/* Mario character */}
+      {/* <div id="mario-character" ref={marioRef} style={{ position: 'absolute', bottom: '0px' }}></div> {} */}
 
-      <button onClick={handleWriteColorToCharacteristic}>Write to Characteristic</button>
+      <label htmlFor="color-select">Set Color: </label>
+      <select id="color-select" value={selectedColor} onChange={handleColorChange}>
+          <option value="--none--">--none--</option>
+          <option value="blue">Blue</option>
+          <option value="red">Red</option>
+          <option value="green">Green</option>
+          <option value="white">White</option>
+          <option value="orange">Orange</option>
+          <option value="darkYellow">Dark Yellow</option>
+          <option value="purple">Purple</option>
+          <option value="pink">Pink</option>
+          <option value="fuchsia">Fuchsia</option>
+          <option value="turquoise">Turquoise</option>
+          <option value="lightGreen">Light Green</option>
+          <option value="fluorescentGreen">Fluorescent Green</option>
+          <option value="yellow">Yellow</option>
+          <option value="lightPurple">Light Purple</option>
+          <option value="iceWhite">Ice White</option>
+        </select>
 
 
 
