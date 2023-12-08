@@ -12,6 +12,7 @@ function App() {
   const kCommandCharacteristicUUID = '00001528-1212-efde-1523-785feabcd123';
   const [server, setServer] = useState(null); // State for the server
   const [selectedColor, setSelectedColor] = useState('');
+  const [luminosity, setLuminosity] = useState(0);
 
   // useEffect(() => {
   //   if (interpretedValue != null) {
@@ -74,7 +75,7 @@ function App() {
 
   }
 
-  // Function to write to a characteristic
+  // Function to write color to the characteristic
   const handleWriteColorToCharacteristic = async (colorParameter) => {
     try {
       let commandValues;
@@ -143,6 +144,24 @@ function App() {
     }
   };
 
+  // Function to write luminocity to the characteristic
+  const handleWriteLuminocityToCharacteristic = async (intensity, delay) => {
+    try {
+      let commandValues = [1, intensity, delay];
+
+      await writeToCharacteristic(server, serviceUUID, kCommandCharacteristicUUID, commandValues);
+    } catch (error) {
+      console.error('Error writing to characteristic:', error);
+    }
+  };
+
+  const handleLuminosityChange = (event) => {
+    setLuminosity(event.target.value);
+  };
+
+  const handleSetLuminosity = () => {
+    handleWriteLuminocityToCharacteristic(parseInt(luminosity, 10), 0);
+  };
 
 
   return (
@@ -156,27 +175,40 @@ function App() {
 
       <label htmlFor="color-select">Set Color: </label>
       <select id="color-select" value={selectedColor} onChange={handleColorChange}>
-          <option value="--none--">--none--</option>
-          <option value="blue">Blue</option>
-          <option value="red">Red</option>
-          <option value="green">Green</option>
-          <option value="white">White</option>
-          <option value="orange">Orange</option>
-          <option value="darkYellow">Dark Yellow</option>
-          <option value="purple">Purple</option>
-          <option value="pink">Pink</option>
-          <option value="fuchsia">Fuchsia</option>
-          <option value="turquoise">Turquoise</option>
-          <option value="lightGreen">Light Green</option>
-          <option value="fluorescentGreen">Fluorescent Green</option>
-          <option value="yellow">Yellow</option>
-          <option value="lightPurple">Light Purple</option>
-          <option value="iceWhite">Ice White</option>
-        </select>
+        <option value="--none--">--none--</option>
+        <option value="blue">Blue</option>
+        <option value="red">Red</option>
+        <option value="green">Green</option>
+        <option value="white">White</option>
+        <option value="orange">Orange</option>
+        <option value="darkYellow">Dark Yellow</option>
+        <option value="purple">Purple</option>
+        <option value="pink">Pink</option>
+        <option value="fuchsia">Fuchsia</option>
+        <option value="turquoise">Turquoise</option>
+        <option value="lightGreen">Light Green</option>
+        <option value="fluorescentGreen">Fluorescent Green</option>
+        <option value="yellow">Yellow</option>
+        <option value="lightPurple">Light Purple</option>
+        <option value="iceWhite">Ice White</option>
+      </select>
+
+      <div>
+        <label htmlFor="luminosity-range">Set Luminosity (0-64): </label>
+        <input
+          type="range"
+          id="luminosity-range"
+          min="0"
+          max="64"
+          value={luminosity}
+          onChange={handleLuminosityChange}
+        />
+        <span>{luminosity}</span>
+        <button onClick={handleSetLuminosity}>Set Luminosity</button>
+      </div>
 
 
-
-    </div>
+    </div >
   );
 }
 
