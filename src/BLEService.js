@@ -21,6 +21,7 @@ export const connectToDevice = async (device) => {
 
 export const startNotifications = async (server, serviceUUID, characteristicUUID, callback) => {
     try {
+      // console.log(server);
       const service = await server.getPrimaryService(serviceUUID);
       const characteristic = await service.getCharacteristic(characteristicUUID);
       await characteristic.startNotifications();
@@ -48,3 +49,17 @@ function handleCharacteristicValueChanged(event) {
     const value = event.target.value;
     console.log('Characteristic value changed:', value);
 }
+
+
+export const writeToCharacteristic = async (server, serviceUUID, characteristicUUID, valueArray) => {
+  try {
+    const service = await server.getPrimaryService(serviceUUID);
+    const characteristic = await service.getCharacteristic(characteristicUUID);
+    const value = new Uint8Array(valueArray); // Convert to Uint8Array
+    await characteristic.writeValue(value);
+  } catch (error) {
+    console.error('Error in writing to characteristic:', error);
+    throw error;
+  }
+};
+
