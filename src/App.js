@@ -164,52 +164,117 @@ function App() {
   };
 
 
+  //   return (
+  //     <div>
+  //       <h1>Interacting with Cosmo</h1>
+  //       <button onClick={handleConnect}>Connect to Cosmo</button>
+  //       <button onClick={handleStartListening} disabled={!characteristic || isListening}>Start Listening</button>
+  //       <button onClick={handleStopListening} disabled={!characteristic || !isListening}>Stop Listening</button>
+
+  //       {interpretedValue !== null && (
+  //         <>
+  //           <div>
+  //             Press Value: {interpretedValue}
+  //           </div>
+  //           <div>
+  //             <label htmlFor="color-select">Set Color: </label>
+  //             <select id="color-select" value={selectedColor} onChange={handleColorChange}>
+  //               <option value="--none--">--none--</option>
+  //               <option value="blue">Blue</option>
+  //               <option value="red">Red</option>
+  //               <option value="green">Green</option>
+  //               <option value="white">White</option>
+  //               <option value="orange">Orange</option>
+  //               <option value="darkYellow">Dark Yellow</option>
+  //               <option value="purple">Purple</option>
+  //               <option value="pink">Pink</option>
+  //               <option value="fuchsia">Fuchsia</option>
+  //               <option value="turquoise">Turquoise</option>
+  //               <option value="lightGreen">Light Green</option>
+  //               <option value="fluorescentGreen">Fluorescent Green</option>
+  //               <option value="yellow">Yellow</option>
+  //               <option value="lightPurple">Light Purple</option>
+  //               <option value="iceWhite">Ice White</option>
+  //             </select>
+  //           </div>
+  //           <div>
+  //             <label htmlFor="luminosity-range">Set Luminosity (0-64): </label>
+  //             <input
+  //               type="range"
+  //               id="luminosity-range"
+  //               min="0"
+  //               max="64"
+  //               value={luminosity}
+  //               onChange={handleLuminosityChange}
+  //             />
+  //             <span>{luminosity}</span>
+  //             <button onClick={handleSetLuminosity}>Set Luminosity</button>
+  //           </div>
+  //         </>
+  //       )}
+
+  //     </div >
+
+  //   );
+  // }
+
   return (
-    <div>
-      <h1>First web based Cosmo game!</h1>
-      <button onClick={handleConnect}>Connect to Cosmo</button>
-      <button onClick={handleStartListening} disabled={!characteristic || isListening}>Start Listening</button>
-      <button onClick={handleStopListening} disabled={!characteristic || !isListening}>Stop Listening</button>
-      {interpretedValue !== null && <p>Press Value: {interpretedValue}</p>}
-      {/* <div id="mario-character" ref={marioRef} style={{ position: 'absolute', bottom: '0px' }}></div> {} */}
+    <div className="p-4">
+      <h1 className="text-xl font-bold mb-4">Interacting with Cosmo</h1>
+      <div className="mb-4">
+        <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={handleConnect}>Connect to Cosmo</button>
+        <button onClick={handleStartListening} disabled={!characteristic || isListening}>Start Listening</button>
+        <button onClick={handleStopListening} disabled={!characteristic || !isListening}>Stop Listening</button>
 
-      <label htmlFor="color-select">Set Color: </label>
-      <select id="color-select" value={selectedColor} onChange={handleColorChange}>
-        <option value="--none--">--none--</option>
-        <option value="blue">Blue</option>
-        <option value="red">Red</option>
-        <option value="green">Green</option>
-        <option value="white">White</option>
-        <option value="orange">Orange</option>
-        <option value="darkYellow">Dark Yellow</option>
-        <option value="purple">Purple</option>
-        <option value="pink">Pink</option>
-        <option value="fuchsia">Fuchsia</option>
-        <option value="turquoise">Turquoise</option>
-        <option value="lightGreen">Light Green</option>
-        <option value="fluorescentGreen">Fluorescent Green</option>
-        <option value="yellow">Yellow</option>
-        <option value="lightPurple">Light Purple</option>
-        <option value="iceWhite">Ice White</option>
-      </select>
-
-      <div>
-        <label htmlFor="luminosity-range">Set Luminosity (0-64): </label>
-        <input
-          type="range"
-          id="luminosity-range"
-          min="0"
-          max="64"
-          value={luminosity}
-          onChange={handleLuminosityChange}
-        />
-        <span>{luminosity}</span>
-        <button onClick={handleSetLuminosity}>Set Luminosity</button>
       </div>
 
+      {interpretedValue !== null && (
+        <div className="space-y-40">
+          <div>
+            <p className="text-lg">Press Value: {interpretedValue}</p>
+          </div>
+          <div>
+            <label htmlFor="color-select" className="block mb-2">Set Color: </label>
+            <select id="color-select" value={selectedColor} onChange={handleColorChange} className="border border-gray-300 rounded px-4 py-2 focus:border-blue-500">
+              <option value="--none--">--none--</option>
+              <option value="blue">Blue</option>
+              <option value="red">Red</option>
+              <option value="green">Green</option>
+              <option value="white">White</option>
+              <option value="orange">Orange</option>
+              <option value="darkYellow">Dark Yellow</option>
+              <option value="purple">Purple</option>
+              <option value="pink">Pink</option>
+              <option value="fuchsia">Fuchsia</option>
+              <option value="turquoise">Turquoise</option>
+              <option value="lightGreen">Light Green</option>
+              <option value="fluorescentGreen">Fluorescent Green</option>
+              <option value="yellow">Yellow</option>
+              <option value="lightPurple">Light Purple</option>
+              <option value="iceWhite">Ice White</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="luminosity-range" className="block mb-2">Set Luminosity (0-64): </label>
+            <input
+              type="range"
+              id="luminosity-range"
+              min="0"
+              max="64"
+              value={luminosity}
+              onChange={handleLuminosityChange}
+              className="w-full"
+            />
+            <span className="text-lg">{luminosity}</span>
+            <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded ml-4" onClick={handleSetLuminosity}>Set Luminosity</button>
+          </div>
+        </div>
+      )}
 
-    </div >
+    </div>
   );
+
 }
+
 
 export default App;
