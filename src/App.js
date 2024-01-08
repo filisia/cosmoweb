@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { scanForDevices, connectToDevice, startNotifications, stopNotifications, writeToCharacteristic } from './BLEService';
+import React, { useState } from 'react';
+import { scanForDevices, startNotifications, writeToCharacteristic } from './BLEService';
 import BrowserSpecificErrorMessage from './BrowserSpecificErrorMessage';
 import './style.css';
 
@@ -8,34 +8,53 @@ function App() {
   const serviceUUID = '00001523-1212-efde-1523-785feabcd123';
   const kSensorCharacteristicUUID = '00001524-1212-efde-1523-785feabcd123';
   const kCommandCharacteristicUUID = '00001528-1212-efde-1523-785feabcd123';
-  const [server, setServer] = useState(null); // State for the server
-  const [selectedColor, setSelectedColor] = useState('');
-  const [luminosity, setLuminosity] = useState(0);
   const [connectedDevices, setConnectedDevices] = useState([]);
   const [deviceCircleAssociation, setDeviceCircleAssociation] = useState({});
+  const colors = ['blue', 'green', 'yellow', 'orange', 'red', 'purple'];
 
+
+  const handleConnectToDevice = async (index) => {
+    try {
+      const device = await scanForDevices();
+      const server = await device.gatt.connect();
+      setCharacteristic(await startNotifications(server, serviceUUID, kSensorCharacteristicUUID, (event) => handleCharacteristicValueChanged_sensor(event, device.id)));
+
+      if (!connectedDevices.some(dev => dev.id === device.id)) {
+        const newConnectedDevices = [...connectedDevices, device];
+        setConnectedDevices(newConnectedDevices);
+        setDeviceCircleAssociation(prevAssociations => ({
+          ...prevAssociations,
+          [device.id]: {
+            circleIndex: newConnectedDevices.length,
+            forceValue: null
+          }
+        }));
+
+        const deviceIndex = newConnectedDevices.length % colors.length - 1;
+        const nextColor = colors[deviceIndex];
+        await handleWriteColorToCharacteristic(nextColor, server);
+        await handleWriteLuminocityToCharacteristic(64, 0, server, deviceIndex);
+      }
+    } catch (error) {
+      console.error('Connection failed:', error);
+    }
+  };
 
 
   // Callback function for handling characteristic value changes
   function handleCharacteristicValueChanged_sensor(event, deviceId) {
     const value = event.target.value;
     const intValue = value.getUint8(0);
-    
-    setDeviceCircleAssociation(prevAssociations => {
-      const updatedAssociations = {
-        ...prevAssociations,
-        [deviceId]: {
-          ...prevAssociations[deviceId],
-          forceValue: intValue
-        }
-      };
-  
-      return updatedAssociations;
-    });
+    setDeviceCircleAssociation(prevAssociations => ({
+      ...prevAssociations,
+      [deviceId]: {
+        ...prevAssociations[deviceId],
+        forceValue: intValue
+      }
+    }));
   }
-
   // Function to write color to the characteristic
-  const handleWriteColorToCharacteristic = async (colorParameter) => {
+  const handleWriteColorToCharacteristic = async (colorParameter, server) => {
     try {
       let commandValues;
       switch (colorParameter) {
@@ -95,52 +114,11 @@ function App() {
     }
   };
 
-  const [devices, setDevices] = useState([]);
 
-  const colors = ['blue', 'green', 'yellow', 'orange', 'red', 'purple']; // Array of colors for devices
-
-  const handleConnectToDevice = async (index) => {
-    try {
-      // console.log(`Attempting to connect to a device from circle ${index + 1}...`);
-      const device = await scanForDevices();
-      const connectedServer = await device.gatt.connect();
-
-      setServer(connectedServer); // Set the server state
-
-      const char_sensor = await startNotifications(connectedServer, serviceUUID,
-          kSensorCharacteristicUUID, (event) => handleCharacteristicValueChanged_sensor(event, device.id));
-        
-      setCharacteristic(char_sensor);
-
-      // Add the new device to the connected devices list and create an association with the circle
-      if (!connectedDevices.some(dev => dev.id === device.id)) {
-        setConnectedDevices(prevDevices => [...prevDevices, device]);
-        setDeviceCircleAssociation(prevAssociations => ({
-          ...prevAssociations,
-          [device.id]: {
-            circleIndex: connectedDevices.length + 1,
-            forceValue: null // Initialize with null or a default value
-          }
-        }));
-
-        console.log(`Device ${device.id} connected and associated with circle ${connectedDevices.length + 1}`);
-      }
-    } catch (error) {
-      console.error('Connection failed:', error);
-    }
-  };
-
-
-  const handleColorChange = (event) => {
-    const color = event.target.value;
-    setSelectedColor(color);
-    if (color !== '--none--') {
-      handleWriteColorToCharacteristic(color);
-    }
-  };
-
+  
+  
   // Function to write luminocity to the characteristic
-  const handleWriteLuminocityToCharacteristic = async (intensity, delay) => {
+  const handleWriteLuminocityToCharacteristic = async (intensity, delay, server, deviceIndex) => {
     try {
       let commandValues = [1, intensity, delay];
 
@@ -150,25 +128,12 @@ function App() {
     }
   };
 
-  const handleLuminosityChange = (event) => {
-    setLuminosity(event.target.value);
-  };
-
-  const handleSetLuminosity = () => {
-    handleWriteLuminocityToCharacteristic(parseInt(luminosity, 10), 0);
-  };
-
-
-
   return (
     <div className="p-4 space-y-4">
       <div className="flex justify-around">
         {colors.map((color, index) => {
-          // Determine if the circle should be active based on the number of connected devices
           const isActive = index < connectedDevices.length;
           const circleClasses = `circle circle-${color} ${isActive ? "circle-connected" : ""}`;
-
-          // Get the device ID associated with the current circle
           const deviceId = connectedDevices[index]?.id;
 
           return (
@@ -180,8 +145,6 @@ function App() {
           );
         })}
       </div>
-
-
     </div>
   );
 }
