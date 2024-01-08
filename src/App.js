@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { scanForDevices, startNotifications, writeToCharacteristic } from './BLEService';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
-import BrowserSpecificErrorMessage from './BrowserSpecificErrorMessage';
+// import BrowserSpecificErrorMessage from './BrowserSpecificErrorMessage';
 import './style.css';
 import GamePress from './GamePress';
 import HomePage from './HomePage';
+import GrowShrinkGame from './GrowShrinkGame';
 
 function App() {
   const [characteristic, setCharacteristic] = useState(null);
@@ -17,6 +18,8 @@ function App() {
   const colors = ['blue', 'green', 'yellow', 'orange', 'red', 'purple'];
   // State for game status (pressed or released)
   const [gameStatus, setGameStatus] = useState(null);
+  const [pressValue, setPressValue] = useState(0); // A state to hold the press value
+
 
 
   const handleConnectToDevice = async (index) => {
@@ -53,6 +56,7 @@ function App() {
   function handleCharacteristicValueChanged_sensor(event, deviceId) {
     const value = event.target.value;
     const intValue = value.getUint8(0);
+    setPressValue(intValue);
     setDeviceCircleAssociation(prevAssociations => ({
       ...prevAssociations,
       [deviceId]: {
@@ -162,12 +166,16 @@ function App() {
             <li>
               <Link to="/game-press">Game Press</Link>
             </li>
+            <li>
+              <Link to="/grow-shrink-game">Grow/Shrink Game</Link>
+            </li>
           </ul>
         </nav>
 
         <Routes>
           
           <Route path="/game-press" element={<GamePress gameStatus={gameStatus} />} />
+          <Route path="/grow-shrink-game" element={<GrowShrinkGame pressValue={pressValue} />} />
 
 
           <Route path="/" element={
