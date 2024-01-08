@@ -1,16 +1,22 @@
-import React from 'react';
-// Import any other necessary components or functions
+// GamePress.js
+import React, { useState, useEffect } from 'react';
 
-function GamePress() {
-  // Add your game interaction logic here
+function GamePress({ gameStatus }) {
 
-  return (
-    <div>
-      {/* Your HTML and components for the GamePress page */}
-      <h1>Game Press Page</h1>
-      {/* ... */}
-    </div>
-  );
-}
-
+    useEffect(() => {
+      if (gameStatus === 'Pressed') {
+        console.log('Button Pressed');
+      } else if (gameStatus === 'Released') {
+        console.log('Button Released');
+      }
+    }, [gameStatus]);
+  
+    return (
+      <div>
+        <h1>Game Press Page</h1>
+        <p>Button State: {gameStatus}</p>
+      </div>
+    );
+  }
+  
 export default GamePress;

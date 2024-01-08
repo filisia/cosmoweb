@@ -11,9 +11,12 @@ function App() {
   const serviceUUID = '00001523-1212-efde-1523-785feabcd123';
   const kSensorCharacteristicUUID = '00001524-1212-efde-1523-785feabcd123';
   const kCommandCharacteristicUUID = '00001528-1212-efde-1523-785feabcd123';
+  const kButtonStatusCharacteristicUUID = '00001525-1212-efde-1523-785feabcd123';
   const [connectedDevices, setConnectedDevices] = useState([]);
   const [deviceCircleAssociation, setDeviceCircleAssociation] = useState({});
   const colors = ['blue', 'green', 'yellow', 'orange', 'red', 'purple'];
+  // State for game status (pressed or released)
+  const [gameStatus, setGameStatus] = useState(null);
 
 
   const handleConnectToDevice = async (index) => {
@@ -21,6 +24,8 @@ function App() {
       const device = await scanForDevices();
       const server = await device.gatt.connect();
       setCharacteristic(await startNotifications(server, serviceUUID, kSensorCharacteristicUUID, (event) => handleCharacteristicValueChanged_sensor(event, device.id)));
+
+      setCharacteristic(await startNotifications(server, serviceUUID, kButtonStatusCharacteristicUUID, (event) => handleCharacteristicValueChanged_button(event, device.id)));
 
       if (!connectedDevices.some(dev => dev.id === device.id)) {
         const newConnectedDevices = [...connectedDevices, device];
@@ -56,6 +61,21 @@ function App() {
       }
     }));
   }
+
+  // Callback function for handling characteristic value changes
+  function handleCharacteristicValueChanged_button(event, deviceId) {
+    const value = event.target.value;
+    const intValue = value.getUint8(0);
+    if (intValue === 0) {
+      setGameStatus('Pressed');
+    } else {
+      setGameStatus('Released');
+    }
+
+    return intValue;
+  }
+
+
   // Function to write color to the characteristic
   const handleWriteColorToCharacteristic = async (colorParameter, server) => {
     try {
@@ -146,9 +166,12 @@ function App() {
         </nav>
 
         <Routes>
-          <Route path="/game-press" element={<GamePress />} />
+          
+          <Route path="/game-press" element={<GamePress gameStatus={gameStatus} />} />
+
+
           <Route path="/" element={
-            <HomePage 
+            <HomePage
               colors={colors}
               connectedDevices={connectedDevices}
               deviceCircleAssociation={deviceCircleAssociation}
