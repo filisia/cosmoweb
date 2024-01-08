@@ -20,22 +20,6 @@ body {
     overflow: hidden;
 }
 
-#mario-character {
-    width: 50px;
-    height: 50px;
-    background-color: #64017C;
-    border-radius: 10px;
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-}
-
-#mario-character.jump {
-    animation: jump-animation 0.3s ease;
-    /* Adjust timing and easing to your preference */
-}
-
 @keyframes jump-animation {
 
     0%,
@@ -52,21 +36,25 @@ body {
 
 .circle {
     width: 100px;
-    /* Circle size */
     height: 100px;
-    /* Circle size */
     border-radius: 50%;
-    /* Make it round */
-    display: inline-block;
+    display: inline-flex; 
     align-items: center;
     justify-content: center;
     margin: 10px;
-    /* Spacing between circles */
     cursor: pointer;
     opacity: 0.3;
-    /* Default opacity for disconnected state */
     transition: opacity 0.3s ease;
+    vertical-align: top; /* Added this line */
 }
+
+.circle p {
+    color: #fff;
+    font-size: 0.75rem;
+    /* No position absolute, top, left, or transform needed */
+}
+
+
 
 /* Opacity for connected state */
 .circle-connected {
