@@ -7,7 +7,7 @@ function GamePress({ gameStatus }) {
   useEffect(() => {
     if (gameStatus === 'Pressed') {
       setExplodeConfetti(true);
-      setTimeout(() => setExplodeConfetti(false), 1000); // Reset confetti
+      setTimeout(() => setExplodeConfetti(false), 1000);
     }
   }, [gameStatus]);
 
@@ -26,16 +26,20 @@ function GamePress({ gameStatus }) {
   };
 
   return (
-    <div>
-      <h1>Game Press Page</h1>
-      <p>Button State: {gameStatus}</p>
-      <div style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)'
-        }}>
-        <Confetti active={explodeConfetti} config={confettiConfig} />
+    <div className="flex justify-center items-center h-screen bg-gradient-to-r from-cyan-500 to-blue-500">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold text-white mb-4">Game Press Page</h1>
+        <p className={`text-2xl font-semibold ${gameStatus === 'Pressed' ? 'text-green-300' : 'text-red-300'}`}>
+          Button State: {gameStatus || 'Idle'}
+        </p>
+        <div style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)'
+          }}>
+          <Confetti active={explodeConfetti} config={confettiConfig} />
+        </div>
       </div>
     </div>
   );
