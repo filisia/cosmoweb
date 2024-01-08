@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { scanForDevices, startNotifications, writeToCharacteristic } from './BLEService';
+import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import BrowserSpecificErrorMessage from './BrowserSpecificErrorMessage';
 import './style.css';
+import GamePress from './GamePress';
+import HomePage from './HomePage';
 
 function App() {
   const [characteristic, setCharacteristic] = useState(null);
@@ -115,8 +118,8 @@ function App() {
   };
 
 
-  
-  
+
+
   // Function to write luminocity to the characteristic
   const handleWriteLuminocityToCharacteristic = async (intensity, delay, server, deviceIndex) => {
     try {
@@ -129,25 +132,33 @@ function App() {
   };
 
   return (
-    <div className="p-4 space-y-4">
-      <div className="flex justify-around">
-        {colors.map((color, index) => {
-          const isActive = index < connectedDevices.length;
-          const circleClasses = `circle circle-${color} ${isActive ? "circle-connected" : ""}`;
-          const deviceId = connectedDevices[index]?.id;
+    <Router>
+      <div>
+        <nav>
+          <ul>
+            <li>
+              <Link to="/">Home</Link>
+            </li>
+            <li>
+              <Link to="/game-press">Game Press</Link>
+            </li>
+          </ul>
+        </nav>
 
-          return (
-            <div key={index} className={circleClasses} onClick={() => handleConnectToDevice(index)}>
-              {deviceId && deviceCircleAssociation[deviceId] && (
-                <p>Force: {deviceCircleAssociation[deviceId].forceValue}</p>
-              )}
-            </div>
-          );
-        })}
+        <Routes>
+          <Route path="/game-press" element={<GamePress />} />
+          <Route path="/" element={
+            <HomePage 
+              colors={colors}
+              connectedDevices={connectedDevices}
+              deviceCircleAssociation={deviceCircleAssociation}
+              handleConnectToDevice={handleConnectToDevice}
+            />
+          } />
+        </Routes>
       </div>
-    </div>
+    </Router>
   );
 }
-
 
 export default App;
