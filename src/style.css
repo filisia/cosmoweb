@@ -1,7 +1,7 @@
 @font-face {
     font-family: 'GT-Walsheim-Pro-Regular';
     src: url('./fonts/GTWalsheimPro-Medium.ttf') format('ttf'),
-         url('./fonts/GT-Walsheim-Pro-Regular.ttf') format('ttf');
+        url('./fonts/GT-Walsheim-Pro-Regular.ttf') format('ttf');
     font-weight: normal;
     font-style: normal;
 }
@@ -37,6 +37,80 @@ body {
 }
 
 @keyframes jump-animation {
-    0%, 100% { bottom: 0; }
-    50% { bottom: 100px; } /* Adjust the height of the jump */
+
+    0%,
+    100% {
+        bottom: 0;
+    }
+
+    50% {
+        bottom: 100px;
+    }
+
+    /* Adjust the height of the jump */
+}
+
+.circle {
+    width: 100px;
+    /* Circle size */
+    height: 100px;
+    /* Circle size */
+    border-radius: 50%;
+    /* Make it round */
+    display: inline-block;
+    align-items: center;
+    justify-content: center;
+    margin: 10px;
+    /* Spacing between circles */
+    cursor: pointer;
+    opacity: 0.3;
+    /* Default opacity for disconnected state */
+    transition: opacity 0.3s ease;
+}
+
+/* Opacity for connected state */
+.circle-connected {
+    opacity: 1;
+    /* Full opacity for connected state */
+}
+
+/* Classes for circle colors */
+.circle-blue {
+    background-color: #3172DD;
+}
+
+.circle-red {
+    background-color: #F9502C;
+}
+
+.circle-green {
+    background-color: #02E140;
+}
+
+.circle-purple {
+    background-color: #D669FC;
+}
+
+.circle-orange {
+    background-color: #F19846;
+}
+
+.circle-yellow {
+    background-color: #FCEA2D;
+}
+
+.circle-darkYellow {
+    background-color: #ffb700;
+}
+
+/* Connected device text */
+.circle p {
+    color: #fff;
+    font-size: 0.75rem;
+}
+
+/* Specific styling for white circle to ensure text is visible */
+.circle-white p {
+    color: #333;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
