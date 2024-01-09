@@ -36,23 +36,66 @@ body {
 
 .circle {
     width: 100px;
+    /* Circle size */
     height: 100px;
+    /* Circle size */
     border-radius: 50%;
-    display: inline-flex; 
+    /* Make it round */
+    display: flex;
     align-items: center;
     justify-content: center;
     margin: 10px;
-    cursor: pointer;
-    opacity: 0.3;
-    transition: opacity 0.3s ease;
-    vertical-align: top; /* Added this line */
+    /* Spacing between circles */
+    position: relative;
 }
 
+/* Default disconnected circle style */
+.circle-disconnected {
+    background-color: #e0e0e0;
+    /* This ensures disconnected circles are grey */
+
+}
+
+/* Style for the circle that is next to be connected */
+.circle-next {
+    background-color: #ffffff;
+    /* White color for the next circle to be connected */
+    border: 2px dashed #000000;
+    /* Dashed border for the "+" sign circle */
+    cursor: pointer;
+    /* Only the next circle should change the cursor to pointer */
+    opacity: 1;
+}
+
+.circle-plus {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    /* Large font size for "+" sign */
+    color: #000000;
+    /* Black color for "+" sign */
+}
+
+/* Style for the force value text */
+.circle p {
+    position: absolute;
+    /* bottom: -20px; */
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 10px;
+    text-align: center;
+    width: 100%;
+    /* padding: 60px 0px; */
+    font-size: 12px;
+    color: #000;
+}
+/* 
 .circle p {
     color: #fff;
     font-size: 0.75rem;
-    /* No position absolute, top, left, or transform needed */
-}
+} */
+
 
 
 
@@ -64,38 +107,41 @@ body {
 
 /* Classes for circle colors */
 .circle-blue {
-    background-color: #3172DD;
+    background-color: rgba(49, 114, 221, 0.5); 
+    border: 4px #3172DD solid;
 }
 
 .circle-red {
-    background-color: #F9502C;
+    background-color: rgba(249, 80, 44, 0.5);
+    border: 4px #F9502C solid;
 }
 
 .circle-green {
-    background-color: #02E140;
+    background-color: rgba(2, 225, 64, 0.5);
+    border: 4px #02E140 solid;
 }
 
 .circle-purple {
-    background-color: #D669FC;
+    background-color: rgba(214, 105, 252, 0.5);
+    border: 4px #D669FC solid;
 }
 
 .circle-orange {
-    background-color: #F19846;
+    background-color: rgba(241, 152, 70, 0.5);
+    border: 4px #F19846 solid;
 }
 
 .circle-yellow {
-    background-color: #FCEA2D;
+    background-color: rgba(252, 234, 45, 0.5);
+    border: 4px #FCEA2D solid;
 }
 
 .circle-darkYellow {
-    background-color: #ffb700;
+    background-color: rgba(255, 183, 0, 0.5);
+    border: 4px #ffb700 solid;
 }
 
-/* Connected device text */
-.circle p {
-    color: #fff;
-    font-size: 0.75rem;
-}
+
 
 /* Specific styling for white circle to ensure text is visible */
 .circle-white p {
