@@ -9,6 +9,7 @@ import GrowShrinkGame from './GrowShrinkGame';
 
 function App() {
   const [characteristic, setCharacteristic] = useState(null);
+  const [server, setServer] = useState(null);
   const serviceUUID = '00001523-1212-efde-1523-785feabcd123';
   const kSensorCharacteristicUUID = '00001524-1212-efde-1523-785feabcd123';
   const kCommandCharacteristicUUID = '00001528-1212-efde-1523-785feabcd123';
@@ -26,6 +27,8 @@ function App() {
     try {
       const device = await scanForDevices();
       const server = await device.gatt.connect();
+      setServer(server); // Update server state
+
       setCharacteristic(await startNotifications(server, serviceUUID, kSensorCharacteristicUUID, (event) => handleCharacteristicValueChanged_sensor(event, device.id)));
 
       setCharacteristic(await startNotifications(server, serviceUUID, kButtonStatusCharacteristicUUID, (event) => handleCharacteristicValueChanged_button(event, device.id)));
@@ -175,8 +178,7 @@ function App() {
         <Routes>
           
           <Route path="/game-press" element={<GamePress gameStatus={gameStatus} />} />
-          <Route path="/grow-shrink-game" element={<GrowShrinkGame pressValue={pressValue} />} />
-
+          <Route path="/grow-shrink-game" element={<GrowShrinkGame pressValue={pressValue} onWriteLuminocity={handleWriteLuminocityToCharacteristic}  server={server} />} />
 
           <Route path="/" element={
             <HomePage

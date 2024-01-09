@@ -1,14 +1,18 @@
 import React, { useEffect, useState } from 'react';
 
-function GrowShrinkGame({ pressValue }) {
+function GrowShrinkGame({ pressValue, onWriteLuminocity, server }) {
+
   const [size, setSize] = useState(100); // Base size
 
   useEffect(() => {
     // Assuming pressValue is a number that determines the size
     const newSize = 100 + pressValue;
     setSize(newSize);
+    if (pressValue > 0) {
+      // onWriteLuminocity(pressValue, server);
+    }
     
-  }, [pressValue]);
+  }, [pressValue, onWriteLuminocity]);
 
   return (
     <div className="flex justify-center items-center h-screen bg-gradient-to-r from-green-300 to-blue-300">
