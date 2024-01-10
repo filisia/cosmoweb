@@ -60,7 +60,7 @@ body {
 .circle-next {
     background-color: #ffffff;
     /* White color for the next circle to be connected */
-    border: 2px dashed #000000;
+    border: 2px solid;
     /* Dashed border for the "+" sign circle */
     cursor: pointer;
     /* Only the next circle should change the cursor to pointer */
@@ -90,11 +90,6 @@ body {
     font-size: 12px;
     color: #000;
 }
-/* 
-.circle p {
-    color: #fff;
-    font-size: 0.75rem;
-} */
 
 
 
@@ -107,9 +102,10 @@ body {
 
 /* Classes for circle colors */
 .circle-blue {
-    background-color: rgba(49, 114, 221, 0.5); 
+    background-color: rgba(49, 114, 221, 0.5);
     border: 4px #3172DD solid;
 }
+
 
 .circle-red {
     background-color: rgba(249, 80, 44, 0.5);
@@ -147,4 +143,69 @@ body {
 .circle-white p {
     color: #333;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+
+.border-blue {
+    border: 4px #3172DD solid;
+    background-color: white;
+}
+
+.border-red {
+    border: 4px #F9502C solid;
+    background-color: white;
+}
+
+.border-green {
+    border: 4px #02E140 solid;
+    background-color: white;
+}
+
+.border-purple {
+    border: 4px #D669FC solid;
+    background-color: white;
+}
+
+.border-orange {
+    border: 4px #F19846 solid;
+    background-color: white;
+}
+
+.border-yellow {
+    border: 2px #FCEA2D solid;
+    background-color: white;
+}
+
+.border-darkYellow {
+    border: 4px #FFB700 solid;
+    background-color: white;
+}
+
+
+.plus-blue {
+    color: #3172DD;
+}
+
+.plus-red {
+    color: #F9502C;
+}
+
+.plus-green {
+    color: #02E140;
+}
+
+.plus-purple {
+    color: #D669FC;
+}
+
+.plus-orange {
+    color: #F19846;
+}
+
+.plus-yellow {
+    color: #FCEA2D;
+}
+
+.plus-darkYellow {
+    color: #FFB700;
 }
