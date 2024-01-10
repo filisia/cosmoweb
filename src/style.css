@@ -209,3 +209,39 @@ body {
 .plus-darkYellow {
     color: #FFB700;
 }
+
+
+
+
+
+
+
+
+
+nav ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center; /* Center the items horizontally */
+    gap: 20px; /* Space between items */
+  }
+  
+  nav li {
+    display: inline;
+  }
+  
+  nav a {
+    text-decoration: none;
+    color: #3172DD; /* Choose a color for your links */
+    font-weight: bold;
+    padding: 10px;
+    border-radius: 5px;
+    transition: background-color 0.3s, color 0.3s;
+  }
+  
+  nav a:hover {
+    background-color: #3172DD; /* Background color on hover */
+    color: white; /* Text color on hover */
+  }
+  

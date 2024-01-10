@@ -6,6 +6,9 @@ function HomePage({ colors, connectedDevices, deviceCircleAssociation, handleCon
 
   return (
     <div className="p-4 space-y-4">
+      <div className="text-center p-2">
+        Cosmoids: {numberOfConnectedDevices}
+      </div>
       <div className="flex justify-left gap-2">
         <div className="flex justify-around">
           {colors.map((color, index) => {
@@ -33,9 +36,7 @@ function HomePage({ colors, connectedDevices, deviceCircleAssociation, handleCon
         </div>
 
       </div>
-      <div className="text-center">
-        Cosmoids: {numberOfConnectedDevices}
-      </div>
+      
     </div>
   );
 }
