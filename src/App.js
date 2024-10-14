@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { scanForDevices, startNotifications, writeToCharacteristic } from './BLEService';
+import { scanForDevices, startNotifications, writeToCharacteristic, onDeviceDisconnected } from './BLEService';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
-// import BrowserSpecificErrorMessage from './BrowserSpecificErrorMessage';
 import './style.css';
 import GamePress from './GamePress';
 import HomePage from './HomePage';
 import GrowShrinkGame from './GrowShrinkGame';
+import LEDModePage from './LEDModePage';
 
 function App() {
+  // State hooks for various purposes
   const [characteristic, setCharacteristic] = useState(null);
   const [server, setServer] = useState(null);
   const serviceUUID = '00001523-1212-efde-1523-785feabcd123';
@@ -21,18 +22,28 @@ function App() {
   const [gameStatus, setGameStatus] = useState(null);
   const [pressValue, setPressValue] = useState(0); // A state to hold the press value
 
+  // Function to handle device disconnection
+  const handleDisconnect = (device) => {
+    console.log(`Device ${device.id} disconnected`);
+    // Update the state to handle the disconnection
+    setConnectedDevices((prevDevices) => prevDevices.filter((dev) => dev.id !== device.id));
+  };
 
-
+  // Function to handle connection to BLE device
   const handleConnectToDevice = async (index) => {
     try {
       const device = await scanForDevices();
       const server = await device.gatt.connect();
+      // Register disconnection event listener
+      onDeviceDisconnected(device, () => handleDisconnect(device));
+      
       setServer(server); // Update server state
 
+      // Setup notifications for sensor and button status characteristics
       setCharacteristic(await startNotifications(server, serviceUUID, kSensorCharacteristicUUID, (event) => handleCharacteristicValueChanged_sensor(event, device.id)));
 
       setCharacteristic(await startNotifications(server, serviceUUID, kButtonStatusCharacteristicUUID, (event) => handleCharacteristicValueChanged_button(event, device.id)));
-
+      // Add the new device to the connected devices list if not already present
       if (!connectedDevices.some(dev => dev.id === device.id)) {
         const newConnectedDevices = [...connectedDevices, device];
         setConnectedDevices(newConnectedDevices);
@@ -43,7 +54,7 @@ function App() {
             forceValue: null
           }
         }));
-
+        // Determine color and luminosity for the device and write these characteristics
         const deviceIndex = newConnectedDevices.length % colors.length - 1;
         const nextColor = colors[deviceIndex];
         await handleWriteColorToCharacteristic(nextColor, server);
@@ -87,7 +98,9 @@ function App() {
   const handleWriteColorToCharacteristic = async (colorParameter, server) => {
     try {
       let commandValues;
+      // Determine command values based on the color parameter
       switch (colorParameter) {
+        // Assign different command values based on the color
         case 'blue':
           commandValues = [2, 0, 0, 4, 1];
           break;
@@ -137,6 +150,7 @@ function App() {
           commandValues = [2, 0, 0, 0, 1]; // Default command
       }
 
+      // Write the command to the characteristic
       await writeToCharacteristic(server, serviceUUID, kCommandCharacteristicUUID, commandValues);
       console.log('Value written to characteristic:', colorParameter);
     } catch (error) {
@@ -144,19 +158,18 @@ function App() {
     }
   };
 
-
-
-
   // Function to write luminocity to the characteristic
   const handleWriteLuminocityToCharacteristic = async (intensity, delay, server, deviceIndex) => {
     try {
       let commandValues = [1, intensity, delay];
-
+      // Write the command to the characteristic
       await writeToCharacteristic(server, serviceUUID, kCommandCharacteristicUUID, commandValues);
     } catch (error) {
       console.error('Error writing to characteristic:', error);
     }
   };
+
+  
 
   return (
     <Router>
@@ -172,14 +185,16 @@ function App() {
             <li>
               <Link to="/grow-shrink-game">Grow/Shrink Game</Link>
             </li>
+            <li>
+              <Link to="/led-mode">LED Mode</Link>
+            </li>
           </ul>
         </nav>
 
         <Routes>
-          
           <Route path="/game-press" element={<GamePress gameStatus={gameStatus} />} />
           <Route path="/grow-shrink-game" element={<GrowShrinkGame pressValue={pressValue} onWriteLuminocity={handleWriteLuminocityToCharacteristic}  server={server} />} />
-
+          <Route path="/led-mode" element={<LEDModePage server={server} />} />
           <Route path="/" element={
             <HomePage
               colors={colors}

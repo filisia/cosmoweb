@@ -5,7 +5,6 @@ function GrowShrinkGame({ pressValue, onWriteLuminocity, server }) {
   const [size, setSize] = useState(100); // Base size
 
   useEffect(() => {
-    // Assuming pressValue is a number that determines the size
     const newSize = 100 + pressValue;
     setSize(newSize);
     if (pressValue > 0) {
