@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { scanForDevices, startNotifications, writeToCharacteristic, onDeviceDisconnected } from './BLEService';
+import { scanForDevices, startNotifications, writeToCharacteristic, onDeviceDisconnected, connectToDevice } from './BLEService';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import './style.css';
 import GamePress from './GamePress';
@@ -30,41 +30,16 @@ function App() {
   };
 
   // Function to handle connection to BLE device
-  const handleConnectToDevice = async (index) => {
+  const handleConnectToDevice = async () => {
     try {
       const device = await scanForDevices();
-      const server = await device.gatt.connect();
-      // Register disconnection event listener
-      onDeviceDisconnected(device, () => handleDisconnect(device));
-      
-      setServer(server); // Update server state
-
-      // Setup notifications for sensor and button status characteristics
-      setCharacteristic(await startNotifications(server, serviceUUID, kSensorCharacteristicUUID, (event) => handleCharacteristicValueChanged_sensor(event, device.id)));
-
-      setCharacteristic(await startNotifications(server, serviceUUID, kButtonStatusCharacteristicUUID, (event) => handleCharacteristicValueChanged_button(event, device.id)));
-      // Add the new device to the connected devices list if not already present
-      if (!connectedDevices.some(dev => dev.id === device.id)) {
-        const newConnectedDevices = [...connectedDevices, device];
-        setConnectedDevices(newConnectedDevices);
-        setDeviceCircleAssociation(prevAssociations => ({
-          ...prevAssociations,
-          [device.id]: {
-            circleIndex: newConnectedDevices.length,
-            forceValue: null
-          }
-        }));
-        // Determine color and luminosity for the device and write these characteristics
-        const deviceIndex = newConnectedDevices.length % colors.length - 1;
-        const nextColor = colors[deviceIndex];
-        await handleWriteColorToCharacteristic(nextColor, server);
-        await handleWriteLuminocityToCharacteristic(64, 0, server, deviceIndex);
-      }
+      const gattServer = await connectToDevice(device);
+      setServer(gattServer);
+      console.log('Connected to device, server:', gattServer);
     } catch (error) {
-      console.error('Connection failed:', error);
+      console.error('Error connecting to device:', error);
     }
   };
-
 
   // Callback function for handling characteristic value changes
   function handleCharacteristicValueChanged_sensor(event, deviceId) {
@@ -201,6 +176,7 @@ function App() {
               connectedDevices={connectedDevices}
               deviceCircleAssociation={deviceCircleAssociation}
               handleConnectToDevice={handleConnectToDevice}
+              server={server}
             />
           } />
         </Routes>

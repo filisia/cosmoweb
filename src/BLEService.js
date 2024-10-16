@@ -3,13 +3,22 @@
 // Function to initiate scanning for BLE devices
 export const scanForDevices = async () => {
   try {
+    const deviceInfoServiceUUID = '0000180a-0000-1000-8000-00805f9b34fb';
+    const mainServiceUUID = '00001523-1212-efde-1523-785feabcd123';
+
     // Define the filters for the devices to be scanned (by services)
-    const filters = [{ services: ['00001523-1212-efde-1523-785feabcd123'] }];
-    // Request the device using the defined filters
-    const device = await navigator.bluetooth.requestDevice({ filters });
+    const filters = [{ services: [mainServiceUUID] }];
+    
+    // Request the device using the defined filters and include deviceInfoServiceUUID in optionalServices
+    const device = await navigator.bluetooth.requestDevice({ 
+      filters,
+      optionalServices: [deviceInfoServiceUUID]
+    });
+    
     return device;
   } catch (error) {
     // Error handling for scanning process
+    console.error('Error scanning for devices:', error);
     throw error;
   }
 };
@@ -88,4 +97,18 @@ export const writeToCharacteristic = async (server, serviceUUID, characteristicU
 export const onDeviceDisconnected = (device, callback) => {
   // Assign the provided callback to the 'gattserverdisconnected' event
   device.ongattserverdisconnected = callback;
+};
+
+// Add this function to BLEService.js
+export const readCharacteristic = async (server, serviceUUID, characteristicUUID) => {
+  try {
+    const service = await server.getPrimaryService(serviceUUID);
+    const characteristic = await service.getCharacteristic(characteristicUUID);
+    const value = await characteristic.readValue();
+    console.log(`Read characteristic ${characteristicUUID}:`, value);
+    return value;
+  } catch (error) {
+    console.error(`Error reading characteristic ${characteristicUUID}:`, error);
+    throw error;
+  }
 };
