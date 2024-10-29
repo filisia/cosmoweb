@@ -1,45 +1,77 @@
-import React, { useState } from 'react';
-import { writeToCharacteristic } from './BLEService';
+import React, { useState, useEffect } from 'react';
+import wsService from './services/WebSocketService';
+
+const ledModes = [
+  { name: 'Solid Color', value: 0, description: 'Static single color display' },
+  { name: 'Breathing', value: 1, description: 'Smooth pulsing effect' },
+  { name: 'Rainbow', value: 2, description: 'Cycling through colors' },
+  // Add more modes as needed
+];
 
 const LEDModePage = ({ server }) => {
   const [selectedMode, setSelectedMode] = useState('');
-  const [sensorThreshold] = useState(0);
-  const [ledLuminosityMultiplier] = useState(0);
-  const [calibrationEnabled] = useState(false);
+  const [connected, setConnected] = useState(false);
+  const [brightness, setBrightness] = useState(100);
+  const [color, setColor] = useState({ r: 4, g: 4, b: 4 }); // Default to white
 
-  const serviceUUID = '00001523-1212-efde-1523-785feabcd123';
-  const kCommandCharacteristicUUID = '00001528-1212-efde-1523-785feabcd123';
+  useEffect(() => {
+    wsService.connect();
+    const removeListener = wsService.addListener((status, data) => {
+      switch (status) {
+        case 'connected':
+          setConnected(true);
+          break;
+        case 'disconnected':
+          setConnected(false);
+          break;
+        case 'eventResult':
+          console.log('Command result:', data);
+          break;
+        default:
+          break;
+      }
+    });
 
-  const ledModes = [
-    { name: 'None', value: 0, description: 'LED luminosity is completely independent of the sensor and controlled only by Bluetooth commands. Use this mode when light patterns need to be generated via bluetooth commands.' },
-    { name: 'Analog', value: 1, description: 'LED luminosity is proportional to the sensor value multiplied by "Led Luminosity Multiplier".' },
-    { name: 'Analog Inverted', value: 2, description: 'LED luminosity is inversely proportional to the sensor value multiplied by "Led Luminosity Multiplier".' },
-    { name: 'Button', value: 3, description: 'LED follows the "Button Status" Characteristic value, acting as an indication of the digital state of the sensor.' },
-    { name: 'Button Inverted', value: 4, description: 'LED inversely follows the "Button Status" Characteristic value.' },
-  ];
+    return () => removeListener();
+  }, []);
 
   const handleModeChange = async (mode) => {
     setSelectedMode(mode);
     try {
-      const command = 3; // Equivalent to Commands.setParams.rawValue
-      const calibrationValue = calibrationEnabled ? 1 : 0;
-      const commandValues = [
-        command,
-        sensorThreshold,
-        ledLuminosityMultiplier,
-        calibrationValue,
-        mode.value
-      ];
-      await writeToCharacteristic(server, serviceUUID, kCommandCharacteristicUUID, commandValues);
+      // First set the color
+      await wsService.setColor(server.id, color.r, color.g, color.b);
+      
+      // Then set the brightness
+      await wsService.setLuminosity(server.id, brightness);
+
       console.log('LED mode and parameters changed:', mode.name);
     } catch (error) {
       console.error('Error changing LED mode and parameters:', error);
     }
   };
 
+  const handleBrightnessChange = (value) => {
+    setBrightness(value);
+    wsService.setLuminosity(server.id, value);
+  };
+
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Change LED Mode</h1>
+      
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700">Brightness</label>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={brightness}
+          onChange={(e) => handleBrightnessChange(Number(e.target.value))}
+          className="w-full"
+        />
+        <span>{brightness}%</span>
+      </div>
+
       <div className="space-y-4">
         {ledModes.map((mode) => (
           <div key={mode.value} className="border p-4 rounded">
@@ -48,6 +80,7 @@ const LEDModePage = ({ server }) => {
               className={`w-full p-2 rounded mb-2 ${
                 selectedMode === mode ? 'bg-blue-500 text-white' : 'bg-gray-200'
               }`}
+              disabled={!connected}
             >
               {mode.name}
             </button>
@@ -55,6 +88,12 @@ const LEDModePage = ({ server }) => {
           </div>
         ))}
       </div>
+
+      {!connected && (
+        <div className="mt-4 p-4 bg-yellow-100 text-yellow-700 rounded">
+          Not connected to Cosmoid Bridge. Please ensure the bridge is running and try again.
+        </div>
+      )}
     </div>
   );
 };

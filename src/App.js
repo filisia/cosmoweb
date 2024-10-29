@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { scanForDevices, startNotifications, writeToCharacteristic, onDeviceDisconnected, connectToDevice } from './BLEService';
+import React, { useState, useEffect } from 'react';
+import { scanForDevices, connectToDevice, disconnectDevice } from './BLEService';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import './style.css';
 import GamePress from './GamePress';
@@ -22,6 +22,25 @@ function App() {
   const [gameStatus, setGameStatus] = useState(null);
   const [pressValue, setPressValue] = useState(0); // A state to hold the press value
 
+  useEffect(() => {
+    // Set up disconnect event listener
+    const handleDisconnect = (event) => {
+      const { deviceId } = event.detail;
+      console.log('Device disconnected:', deviceId);
+      
+      // Remove the disconnected device from state
+      setConnectedDevices(prev => prev.filter(device => device.id !== deviceId));
+      setServer(null);
+    };
+
+    window.addEventListener('bleDeviceDisconnected', handleDisconnect);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('bleDeviceDisconnected', handleDisconnect);
+    };
+  }, []);
+
   // Function to handle device disconnection
   const handleDisconnect = (device) => {
     console.log(`Device ${device.id} disconnected`);
@@ -34,8 +53,11 @@ function App() {
     try {
       const device = await scanForDevices();
       const gattServer = await connectToDevice(device);
+      
       setServer(gattServer);
-      console.log('Connected to device, server:', gattServer);
+      setConnectedDevices(prev => [...prev, device]);
+      
+      console.log('Connected to device:', device.name);
     } catch (error) {
       console.error('Error connecting to device:', error);
     }
