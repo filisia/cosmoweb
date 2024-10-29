@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import wsService from './services/WebSocketService';
 import { useWebSocket } from './contexts/WebSocketContext';
 
@@ -8,22 +8,75 @@ const ledModes = [
   { name: 'Rainbow', value: 2, description: 'Cycling through colors' },
 ];
 
+const MAX_BRIGHTNESS = 64;
+
 const LEDModePage = () => {
   const { wsConnected, connectionError, connectedDevices } = useWebSocket();
   const [selectedMode, setSelectedMode] = useState('');
-  const [brightness, setBrightness] = useState(100);
-  const [color, setColor] = useState({ r: 4, g: 4, b: 4 }); // Default to white
+  const [brightness, setBrightness] = useState(64);
+  const [animationInterval, setAnimationInterval] = useState(null);
+
+  useEffect(() => {
+    return () => {
+      if (animationInterval) {
+        clearInterval(animationInterval);
+      }
+    };
+  }, [animationInterval]);
 
   const handleModeChange = async (mode) => {
     setSelectedMode(mode);
+    
     try {
-      // Apply to all connected devices
-      for (const device of connectedDevices) {
-        // First set the color
-        await wsService.setColor(device.id, color.r, color.g, color.b);
-        
-        // Then set the brightness
-        await wsService.setLuminosity(device.id, brightness);
+      const randomColor = {
+        r: Math.floor(Math.random() * 4),
+        g: Math.floor(Math.random() * 4),
+        b: Math.floor(Math.random() * 4)
+      };
+
+      switch (mode.value) {
+        case 0: // Solid Color
+          connectedDevices.forEach(device => {
+            // console.log('Setting solid color to:', randomColor);
+            wsService.setColor(device.id, randomColor.r, randomColor.g, randomColor.b);
+            wsService.setLuminosity(device.id, Math.min(brightness, MAX_BRIGHTNESS));
+          });
+          break;
+
+        case 1: // Breathing
+          // Send 50 commands for breathing effect
+          connectedDevices.forEach(device => {
+            // Initial color setup
+            wsService.setColor(device.id, randomColor.r, randomColor.g, randomColor.b);
+            
+            // Ramp up brightness
+            for (let i = 0; i < 25; i++) {
+              const stepBrightness = Math.min(Math.round((i / 24) * brightness), MAX_BRIGHTNESS);
+              wsService.setLuminosity(device.id, stepBrightness);
+            }
+            
+            // Ramp down brightness
+            for (let i = 24; i >= 0; i--) {
+              const stepBrightness = Math.min(Math.round((i / 24) * brightness), MAX_BRIGHTNESS);
+              wsService.setLuminosity(device.id, stepBrightness);
+            }
+          });
+          break;
+
+        case 2: // Rainbow
+          connectedDevices.forEach(device => {
+            // Send 60 color commands for rainbow effect
+            for (let i = 0; i < 20; i++) {
+              let randomColor = {
+                r: Math.floor(Math.random() * 4),
+                g: Math.floor(Math.random() * 4),
+                b: Math.floor(Math.random() * 4)
+              };
+              wsService.setColor(device.id, randomColor.r, randomColor.g, randomColor.b);
+              wsService.setLuminosity(device.id, Math.min(brightness, MAX_BRIGHTNESS));
+            }
+          });
+          break;
       }
       console.log('LED mode and parameters changed:', mode.name);
     } catch (error) {
@@ -32,9 +85,18 @@ const LEDModePage = () => {
   };
 
   const handleBrightnessChange = (value) => {
+
     setBrightness(value);
+    const randomColor = {
+      r: Math.floor(Math.random() * 256),
+      g: Math.floor(Math.random() * 256),
+      b: Math.floor(Math.random() * 256)
+    };
     // Apply to all connected devices
     connectedDevices.forEach(device => {
+      // Send color command first
+      wsService.setColor(device.id, randomColor.r, randomColor.g, randomColor.b);
+      // Then set brightness
       wsService.setLuminosity(device.id, value);
     });
   };
@@ -65,7 +127,7 @@ const LEDModePage = () => {
         <input
           type="range"
           min="0"
-          max="100"
+          max={MAX_BRIGHTNESS}
           value={brightness}
           onChange={(e) => handleBrightnessChange(Number(e.target.value))}
           className="w-full"
@@ -96,6 +158,31 @@ const LEDModePage = () => {
       )}
     </div>
   );
+};
+
+// Helper function for rainbow effect
+const hsvToRgb = (h, s, v) => {
+  let r, g, b;
+  const i = Math.floor(h / 60);
+  const f = h / 60 - i;
+  const p = v * (1 - s);
+  const q = v * (1 - f * s);
+  const t = v * (1 - (1 - f) * s);
+
+  switch (i % 6) {
+    case 0: r = v; g = t; b = p; break;
+    case 1: r = q; g = v; b = p; break;
+    case 2: r = p; g = v; b = t; break;
+    case 3: r = p; g = q; b = v; break;
+    case 4: r = t; g = p; b = v; break;
+    case 5: r = v; g = p; b = q; break;
+  }
+
+  return {
+    r: Math.round(r * 255),
+    g: Math.round(g * 255),
+    b: Math.round(b * 255)
+  };
 };
 
 export default LEDModePage;

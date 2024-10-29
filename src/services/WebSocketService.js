@@ -141,6 +141,35 @@ class WebSocketService {
       characteristicUUID
     });
   }
+
+  setColor(deviceId, r, g, b) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      let jsonToSend = {
+        type: 'setColor',
+        deviceId: deviceId,
+        data: [r, g, b]
+      };
+      console.log(jsonToSend);
+      this.ws.send(JSON.stringify(jsonToSend));
+    } else {
+      console.error('WebSocket is not connected');
+    }
+  }
+
+  setLuminosity(deviceId, intensity) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      intensity = Math.round((intensity * (64 - 5)) / 100) + 5;
+      let jsonToSend = {
+        type: 'setLuminosity',
+        deviceId: deviceId,
+        data: [intensity]
+      };
+
+      this.ws.send(JSON.stringify(jsonToSend));
+    } else {
+      console.error('WebSocket is not connected');
+    }
+  }
 }
 
 // Create a singleton instance
