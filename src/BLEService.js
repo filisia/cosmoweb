@@ -141,12 +141,11 @@ export const startNotifications = async (server, serviceUUID, characteristicUUID
 };
 
 // Function to write data to a BLE characteristic
-export const writeToCharacteristic = async (server, serviceUUID, characteristicUUID, value) => {
+export const writeToCharacteristic = async (server, serviceUUID, characteristicUUID, values) => {
   try {
     const service = await server.getPrimaryService(serviceUUID);
     const characteristic = await service.getCharacteristic(characteristicUUID);
-    await characteristic.writeValue(new Uint8Array(value));
-    console.log('Written to characteristic:', value);
+    await characteristic.writeValue(new Uint8Array(values));
   } catch (error) {
     console.error('Error writing to characteristic:', error);
     throw error;

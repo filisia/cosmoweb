@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { scanForDevices, connectToDevice, disconnectDevice } from './BLEService';
+import { scanForDevices, connectToDevice, disconnectDevice, writeToCharacteristic } from './BLEService';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import './style.css';
 import GamePress from './GamePress';
@@ -21,6 +21,7 @@ function App() {
   // State for game status (pressed or released)
   const [gameStatus, setGameStatus] = useState(null);
   const [pressValue, setPressValue] = useState(0); // A state to hold the press value
+  
 
   useEffect(() => {
     // Set up disconnect event listener
