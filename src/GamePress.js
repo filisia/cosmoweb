@@ -1,21 +1,30 @@
 // GamePress.js
 import React, { useEffect, useState } from 'react';
 import Confetti from 'react-dom-confetti';
+import wsService from './services/WebSocketService';
+import { useWebSocket } from './contexts/WebSocketContext';
 
-// GamePress component definition
-function GamePress({ gameStatus }) {
-  // State hook to control the confetti explosion
+function GamePress() {
+  const { wsConnected, connectionError } = useWebSocket();
   const [explodeConfetti, setExplodeConfetti] = useState(false);
+  const [gameStatus, setGameStatus] = useState('Idle');
 
-  // Effect hook to handle changes in gameStatus
   useEffect(() => {
-    // Trigger confetti explosion when the button is pressed
-    if (gameStatus === 'Pressed') {
-      setExplodeConfetti(true);
-      // Reset the confetti explosion after 1 second
-      setTimeout(() => setExplodeConfetti(false), 1000);
-    }
-  }, [gameStatus]);
+    const removeListener = wsService.addListener((status, data) => {
+      if (status === 'characteristicChanged' && 
+          data.characteristicUUID === '000015251212efde1523785feabcd123') {
+        const buttonStatus = data.value[0] === 0 ? 'Pressed' : 'Released';
+        setGameStatus(buttonStatus);
+        
+        if (buttonStatus === 'Pressed') {
+          setExplodeConfetti(true);
+          setTimeout(() => setExplodeConfetti(false), 1000);
+        }
+      }
+    });
+
+    return () => removeListener();
+  }, []);
 
   // Configuration object for the confetti effect
   const confettiConfig = {
@@ -32,24 +41,36 @@ function GamePress({ gameStatus }) {
     colors: ["#a864fd", "#29cdff", "#78ff44", "#ff718d", "#fdff6a"]
   };
 
+  if (!wsConnected || connectionError) {
+    return (
+      <div className="flex justify-center items-center h-screen bg-gradient-to-r from-cyan-500 to-blue-500">
+        <div className="text-center text-white">
+          <h1 className="text-4xl font-bold mb-4">Connection Required</h1>
+          <p className="mb-4">Please ensure Cosmoid Bridge is running and connected.</p>
+          <button
+            onClick={() => wsService.connect()}
+            className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700"
+          >
+            Retry Connection
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    // Main container for the GamePress component
     <div className="flex justify-center items-center h-screen bg-gradient-to-r from-cyan-500 to-blue-500">
       <div className="text-center">
-        {/* Title for the Game Press Page */}
         <h1 className="text-4xl font-bold text-white mb-4">Game Press Page</h1>
-        {/* Display the current game status */}
         <p className={`text-2xl font-semibold ${gameStatus === 'Pressed' ? 'text-green-300' : 'text-red-300'}`}>
-          Button State: {gameStatus || 'Idle'}
+          Button State: {gameStatus}
         </p>
-        {/* Container for confetti animation */}
         <div style={{
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)'
-          }}>
-          {/* Confetti component triggered by state */}
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)'
+        }}>
           <Confetti active={explodeConfetti} config={confettiConfig} />
         </div>
       </div>

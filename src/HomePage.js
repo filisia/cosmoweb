@@ -1,66 +1,16 @@
 // HomePage.js
 import React, { useEffect, useState } from 'react';
 import wsService from './services/WebSocketService';
+import { useWebSocket } from './contexts/WebSocketContext';
 
 function HomePage({ colors }) {
-  const [connectedDevices, setConnectedDevices] = useState([]);
-  const [deviceInfo, setDeviceInfo] = useState({});
-  const [wsConnected, setWsConnected] = useState(false);
-  const [deviceValues, setDeviceValues] = useState({});
-  const [connectionError, setConnectionError] = useState(null);
-
-  useEffect(() => {
-    wsService.connect();
-    
-    const removeListener = wsService.addListener((status, data) => {
-      switch (status) {
-        case 'connected':
-          setWsConnected(true);
-          setConnectionError(null);
-          break;
-        case 'disconnected':
-          setWsConnected(false);
-          setConnectedDevices([]);
-          break;
-        case 'connectionFailed':
-          setWsConnected(false);
-          setConnectionError(data.message);
-          break;
-        case 'devicesList':
-          setConnectedDevices(data);
-          data.forEach(device => {
-            wsService.getDeviceInfo(device.id);
-          });
-          break;
-        case 'deviceInfo':
-          setDeviceInfo(prev => ({
-            ...prev,
-            [data.deviceId]: {
-              serialNumber: data.serialNumber,
-              hardwareRevision: data.hardwareRevision,
-              firmwareRevision: data.firmwareRevision
-            }
-          }));
-          break;
-        case 'characteristicChanged':
-          // Handle force sensor characteristic changes
-          if (data.characteristicUUID === '000015241212efde1523785feabcd123') {
-            setDeviceValues(prev => ({
-              ...prev,
-              [data.deviceId]: {
-                ...prev[data.deviceId],
-                forceValue: data.value[0]
-              }
-            }));
-          }
-          break;
-        default:
-          break;
-      }
-    });
-
-    return () => removeListener();
-  }, []);
+  const { 
+    wsConnected, 
+    connectionError, 
+    connectedDevices, 
+    deviceInfo, 
+    deviceValues 
+  } = useWebSocket();
 
   if (!wsConnected || connectionError) {
     return (

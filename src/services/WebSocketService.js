@@ -1,195 +1,90 @@
 class WebSocketService {
   constructor() {
     this.ws = null;
-    this.connected = false;
+    this.listeners = new Set();
+    this.isConnecting = false;
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
-    this.listeners = new Set();
-    this.messageQueue = [];
-    this.connectionTimeout = null;
+    this.connectedDevices = [];
+    this.connectionState = false;
+  }
+
+  isConnected() {
+    return this.connectionState;
   }
 
   connect() {
-    if (this.connectionTimeout) {
-      clearTimeout(this.connectionTimeout);
-    }
-
-    if (this.ws) {
-      this.ws.close();
-      this.ws = null;
-    }
-
-    return new Promise((resolve, reject) => {
-      try {
-        this.ws = new WebSocket('ws://localhost:8080');
-
-        this.connectionTimeout = setTimeout(() => {
-          if (!this.connected && this.ws) {
-            this.ws.close();
-            this.ws = null;
-            this.notifyListeners('connectionFailed', {
-              message: 'Unable to connect to Cosmoid Bridge. Please ensure the application is running.'
-            });
-          }
-        }, 3000);
-
-        this.ws.onopen = () => {
-          clearTimeout(this.connectionTimeout);
-          console.log('Connected to Cosmoid Bridge');
-          this.connected = true;
-          this.reconnectAttempts = 0;
-          this.notifyListeners('connected');
-          
-          while (this.messageQueue.length > 0) {
-            const message = this.messageQueue.shift();
-            this.ws.send(message);
-          }
-          
-          setTimeout(() => this.getDevices(), 100);
-          resolve();
-        };
-
-        this.ws.onclose = (event) => {
-          clearTimeout(this.connectionTimeout);
-          console.log('Disconnected from Cosmoid Bridge');
-          this.connected = false;
-          this.ws = null;
-          
-          if (!event.wasClean) {
-            this.notifyListeners('connectionFailed', {
-              message: 'Connection to Cosmoid Bridge was lost. Please ensure the application is running.'
-            });
-          } else {
-            this.notifyListeners('disconnected');
-          }
-          
-          this.handleReconnect();
-        };
-
-        this.ws.onerror = (error) => {
-          clearTimeout(this.connectionTimeout);
-          console.error('WebSocket error:', error);
-        };
-
-        this.ws.onmessage = (event) => {
-          try {
-            const message = JSON.parse(event.data);
-            this.handleMessage(message);
-          } catch (error) {
-            console.error('Error parsing message:', error);
-          }
-        };
-
-      } catch (error) {
-        clearTimeout(this.connectionTimeout);
-        console.error('Failed to connect:', error);
-        this.notifyListeners('connectionFailed', {
-          message: 'Unable to connect to Cosmoid Bridge. Please ensure the application is running.'
-        });
+    if (this.isConnected()) {
+      this.notifyListeners('connected', null);
+      if (this.connectedDevices.length > 0) {
+        this.notifyListeners('devicesList', { devices: this.connectedDevices });
       }
-    });
-  }
-
-  handleMessage(message) {
-    switch (message.type) {
-      case 'devicesList':
-        this.notifyListeners('devicesList', message.devices);
-        break;
-      case 'deviceConnected':
-        this.notifyListeners('deviceConnected', message.deviceId);
-        break;
-      case 'deviceInfo':
-        this.notifyListeners('deviceInfo', message);
-        break;
-      case 'eventResult':
-        this.notifyListeners('eventResult', message);
-        break;
-      case 'characteristicChanged':
-        if (message.deviceId && message.characteristicUUID) {
-          this.notifyListeners('characteristicChanged', {
-            deviceId: message.deviceId,
-            characteristicUUID: message.characteristicUUID,
-            value: message.value
-          });
-        } else {
-          console.warn('Received incomplete characteristicChanged message:', message);
-        }
-        break;
-      default:
-        console.log('Unhandled message type:', message.type);
-    }
-  }
-
-  sendMessage(message) {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      this.messageQueue.push(message);
       return;
     }
-    this.ws.send(message);
-  }
 
-  getDevices() {
-    const message = JSON.stringify({ type: 'getDevices' });
-    this.sendMessage(message);
-  }
-
-  connectToDevice(deviceId) {
-    const message = JSON.stringify({
-      type: 'connect',
-      deviceId
-    });
-    this.sendMessage(message);
-  }
-
-  setColor(deviceId, r, g, b) {
-    if (r < 0 || r > 4 || g < 0 || g > 4 || b < 0 || b > 4) {
-      throw new Error('Color values must be between 0 and 4');
+    if (this.isConnecting) {
+      return;
     }
 
-    const message = JSON.stringify({
-      type: 'setColor',
-      deviceId,
-      data: [r, g, b]
-    });
-    this.sendMessage(message);
-  }
+    this.isConnecting = true;
 
-  setLuminosity(deviceId, brightness) {
-    if (brightness < 0 || brightness > 100) {
-      throw new Error('Brightness must be between 0 and 100');
+    try {
+      this.ws = new WebSocket('ws://localhost:8080');
+
+      this.ws.onopen = () => {
+        console.log('WebSocket Connected');
+        this.isConnecting = false;
+        this.reconnectAttempts = 0;
+        this.connectionState = true;
+        this.notifyListeners('connected', null);
+        this.send({ type: 'getDevices' });
+      };
+
+      this.ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'devicesList') {
+            this.connectedDevices = data.devices || [];
+          }
+          this.notifyListeners(data.type || 'message', data);
+        } catch (error) {
+          console.error('Error parsing WebSocket message:', error);
+        }
+      };
+
+      this.ws.onclose = () => {
+        console.log('WebSocket Disconnected');
+        this.isConnecting = false;
+        this.connectionState = false;
+        this.notifyListeners('disconnected', null);
+        this.attemptReconnect();
+      };
+
+      this.ws.onerror = (error) => {
+        console.error('WebSocket Error:', error);
+        this.isConnecting = false;
+        this.notifyListeners('connectionFailed', { message: 'Connection failed' });
+      };
+
+    } catch (error) {
+      console.error('Error creating WebSocket:', error);
+      this.isConnecting = false;
+      this.notifyListeners('connectionFailed', { message: error.message });
     }
-
-    const message = JSON.stringify({
-      type: 'setLuminosity',
-      deviceId,
-      data: [brightness]
-    });
-    this.sendMessage(message);
   }
 
-  getDeviceInfo(deviceId) {
-    const message = JSON.stringify({
-      type: 'getDeviceInfo',
-      deviceId
-    });
-    this.sendMessage(message);
-  }
-
-  handleReconnect() {
+  attemptReconnect() {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
       console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
-      setTimeout(() => {
-        if (!this.connected) {
-          this.connect().catch(() => {
-            // Catch and ignore the error as we're already handling it through listeners
-          });
-        }
-      }, 2000);
-    } else {
-      this.notifyListeners('connectionFailed', {
-        message: 'Unable to establish connection after multiple attempts. Please refresh the page to try again.'
-      });
+      setTimeout(() => this.connect(), 2000); // Wait 2 seconds before reconnecting
+    }
+  }
+
+  disconnect() {
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
     }
   }
 
@@ -199,9 +94,55 @@ class WebSocketService {
   }
 
   notifyListeners(status, data) {
-    this.listeners.forEach(callback => callback(status, data));
+    this.listeners.forEach(listener => {
+      try {
+        listener(status, data);
+      } catch (error) {
+        console.error('Error in listener:', error);
+      }
+    });
+  }
+
+  send(message) {
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify(message));
+    } else {
+      console.error('WebSocket is not connected');
+      this.connect(); // Attempt to reconnect
+    }
+  }
+
+  getDeviceInfo(deviceId) {
+    this.send({
+      type: 'getDeviceInfo',
+      deviceId
+    });
+  }
+
+  writeCharacteristic(deviceId, characteristicUUID, value) {
+    this.send({
+      type: 'writeCharacteristic',
+      deviceId,
+      characteristicUUID,
+      value
+    });
+  }
+
+  getDevices() {
+    this.send({
+      type: 'getDevices'
+    });
+  }
+
+  subscribeToCharacteristic(deviceId, characteristicUUID) {
+    this.send({
+      type: 'subscribe',
+      deviceId,
+      characteristicUUID
+    });
   }
 }
 
-export const wsService = new WebSocketService();
+// Create a singleton instance
+const wsService = new WebSocketService();
 export default wsService; 
