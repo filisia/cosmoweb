@@ -6,51 +6,86 @@ class WebSocketService {
     this.maxReconnectAttempts = 5;
     this.listeners = new Set();
     this.messageQueue = [];
+    this.connectionTimeout = null;
   }
 
   connect() {
+    if (this.connectionTimeout) {
+      clearTimeout(this.connectionTimeout);
+    }
+
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
+    }
+
     return new Promise((resolve, reject) => {
       try {
         this.ws = new WebSocket('ws://localhost:8080');
 
+        this.connectionTimeout = setTimeout(() => {
+          if (!this.connected && this.ws) {
+            this.ws.close();
+            this.ws = null;
+            this.notifyListeners('connectionFailed', {
+              message: 'Unable to connect to Cosmoid Bridge. Please ensure the application is running.'
+            });
+          }
+        }, 3000);
+
         this.ws.onopen = () => {
+          clearTimeout(this.connectionTimeout);
           console.log('Connected to Cosmoid Bridge');
           this.connected = true;
           this.reconnectAttempts = 0;
           this.notifyListeners('connected');
           
-          // Process any queued messages
           while (this.messageQueue.length > 0) {
             const message = this.messageQueue.shift();
             this.ws.send(message);
           }
           
-          // Get devices list after connection is established
           setTimeout(() => this.getDevices(), 100);
           resolve();
         };
 
-        this.ws.onclose = () => {
+        this.ws.onclose = (event) => {
+          clearTimeout(this.connectionTimeout);
           console.log('Disconnected from Cosmoid Bridge');
           this.connected = false;
-          this.notifyListeners('disconnected');
+          this.ws = null;
+          
+          if (!event.wasClean) {
+            this.notifyListeners('connectionFailed', {
+              message: 'Connection to Cosmoid Bridge was lost. Please ensure the application is running.'
+            });
+          } else {
+            this.notifyListeners('disconnected');
+          }
+          
           this.handleReconnect();
         };
 
         this.ws.onerror = (error) => {
+          clearTimeout(this.connectionTimeout);
           console.error('WebSocket error:', error);
-          reject(error);
         };
 
         this.ws.onmessage = (event) => {
-          const message = JSON.parse(event.data);
-          // console.log('Received message:', message);
-          this.handleMessage(message);
+          try {
+            const message = JSON.parse(event.data);
+            this.handleMessage(message);
+          } catch (error) {
+            console.error('Error parsing message:', error);
+          }
         };
 
       } catch (error) {
+        clearTimeout(this.connectionTimeout);
         console.error('Failed to connect:', error);
-        reject(error);
+        this.notifyListeners('connectionFailed', {
+          message: 'Unable to connect to Cosmoid Bridge. Please ensure the application is running.'
+        });
       }
     });
   }
@@ -144,7 +179,17 @@ class WebSocketService {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
       console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
-      setTimeout(() => this.connect(), 2000);
+      setTimeout(() => {
+        if (!this.connected) {
+          this.connect().catch(() => {
+            // Catch and ignore the error as we're already handling it through listeners
+          });
+        }
+      }, 2000);
+    } else {
+      this.notifyListeners('connectionFailed', {
+        message: 'Unable to establish connection after multiple attempts. Please refresh the page to try again.'
+      });
     }
   }
 
