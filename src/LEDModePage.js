@@ -88,9 +88,9 @@ const LEDModePage = () => {
 
     setBrightness(value);
     const randomColor = {
-      r: Math.floor(Math.random() * 256),
-      g: Math.floor(Math.random() * 256),
-      b: Math.floor(Math.random() * 256)
+      r: Math.floor(Math.random() * 4),
+      g: Math.floor(Math.random() * 4),
+      b: Math.floor(Math.random() * 4)
     };
     // Apply to all connected devices
     connectedDevices.forEach(device => {
