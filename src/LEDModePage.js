@@ -38,7 +38,7 @@ const LEDModePage = () => {
         case 0: // Solid Color
           connectedDevices.forEach(device => {
             // console.log('Setting solid color to:', randomColor);
-            wsService.setColor(device.id, randomColor.r, randomColor.g, randomColor.b);
+            wsService.setColor(device.id, 4,4,4);
             wsService.setLuminosity(device.id, Math.min(brightness, MAX_BRIGHTNESS));
           });
           break;
