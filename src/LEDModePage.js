@@ -78,7 +78,7 @@ const LEDModePage = () => {
           });
           break;
       }
-      console.log('LED mode and parameters changed:', mode.name);
+      // console.log('LED mode and parameters changed:', mode.name);
     } catch (error) {
       console.error('Error changing LED mode and parameters:', error);
     }
