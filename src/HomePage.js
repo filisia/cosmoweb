@@ -42,7 +42,7 @@ function HomePage({ colors }) {
                     <div className="mt-2 text-sm text-yellow-700">
                       <p>Unable to connect to Cosmoid Bridge. Please follow these steps:</p>
                       <ul className="list-disc pl-5 mt-2 space-y-1">
-                        <li>Ensure the Cosmoid Bridge application is running on your computer. If you haven't installed it yet, you can download it from <a href="https://drive.google.com/file/d/1QXPr67vYiePTso6lsO33KBVpTza1x6_6/view?usp=sharing" target="_blank" rel="noopener noreferrer">this link</a>.</li>
+                        <li>Ensure the Cosmoid Bridge application is running on your computer. If you haven't installed it yet, you can download it from <a href="https://drive.google.com/file/d/1QXPr67vYiePTso6lsO33KBVpTza1x6_6/view?usp=sharing" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'underline', color: 'blue' }}>this link</a>.</li>
                         <li>Check that you're using a supported browser (Chrome or Edge)</li>
                         <li>Verify that no firewall is blocking the connection</li>
                         <li>Try refreshing this page</li>
