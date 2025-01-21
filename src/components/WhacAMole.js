@@ -4,7 +4,9 @@ import { useGameSettings } from '../contexts/GameSettingsContext';
 import useSound from '../hooks/useSound';
 import { GAME_SOUNDS } from '../constants/sounds';
 import Header from './Header';
-import DeviceGrid from './DeviceGrid';
+
+// Define colors array here since it's used in this component
+const colors = ['blue', 'green', 'yellow', 'orange', 'red', 'purple'];
 
 function WhacAMole() {
   const { connectedDevices, deviceValues } = useWebSocket();
@@ -103,7 +105,7 @@ function WhacAMole() {
     if (!gameStarted) return "Game not started";
     if (device.id === activeDevice?.id) {
       const force = deviceValues[device.id]?.forceValue || 0;
-      return `PRESS ME NOW! (Current force: ${force})`;
+      return `PRESS ME NOW! (Force: ${force})`;
     }
     return "Wait...";
   };
@@ -136,28 +138,33 @@ function WhacAMole() {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {connectedDevices.map((device) => (
-          <div
-            key={device.id}
-            className={`p-4 border rounded-lg cursor-pointer transition-all ${
-              activeDevice?.id === device.id 
-                ? 'border-blue-500 bg-blue-50 animate-pulse' 
-                : 'border-gray-200'
-            }`}
-            onClick={() => handleDeviceClick(device)}
-          >
-            <div className="text-center">
-              <div className="font-medium">{device.name}</div>
-              <div className="text-sm text-gray-500">ID: {device.id}</div>
+      <div className="flex flex-wrap justify-center gap-8">
+        {connectedDevices.map((device, index) => {
+          const color = colors[index % colors.length];
+          const isActive = activeDevice?.id === device.id;
+          const deviceValue = deviceValues[device.id]?.forceValue || 0;
+
+          return (
+            <div key={device.id} className="text-center">
+              <div
+                onClick={() => handleDeviceClick(device)}
+                className={`circle circle-${color} ${isActive ? 'circle-active animate-pulse' : ''} 
+                  ${gameStarted ? 'cursor-pointer' : ''}`}
+              >
+                {deviceValue !== undefined && (
+                  <p className="force-value">
+                    <strong>{deviceValue}</strong>
+                  </p>
+                )}
+              </div>
               <div className={`mt-2 font-medium ${
-                activeDevice?.id === device.id ? 'text-blue-600' : 'text-gray-500'
+                isActive ? 'text-blue-600' : 'text-gray-500'
               }`}>
                 {getDeviceStatus(device)}
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {connectedDevices.length === 0 && (
