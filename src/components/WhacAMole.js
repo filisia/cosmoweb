@@ -4,6 +4,7 @@ import { useGameSettings } from '../contexts/GameSettingsContext';
 import useSound from '../hooks/useSound';
 import { GAME_SOUNDS } from '../constants/sounds';
 import Header from './Header';
+import wsService from '../services/WebSocketService';
 
 // Define colors array here since it's used in this component
 const colors = ['blue', 'green', 'yellow', 'orange', 'red', 'purple'];
@@ -16,7 +17,6 @@ function WhacAMole() {
   const [gameStarted, setGameStarted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [lastPressTime, setLastPressTime] = useState(0);
-  const FORCE_THRESHOLD = 20; // Minimum force required to register a hit
 
   // Initialize sounds
   const playHitSound = useSound(GAME_SOUNDS.HIT);
@@ -24,36 +24,40 @@ function WhacAMole() {
   const playStartSound = useSound(GAME_SOUNDS.START);
   const playEndSound = useSound(GAME_SOUNDS.END);
 
-  // Monitor force values for automatic hit detection
+  // Replace force monitoring with tap event listener
   useEffect(() => {
     if (!gameStarted || !activeDevice) return;
 
-    const now = Date.now();
-    const deviceValue = deviceValues[activeDevice.id]?.forceValue || 0;
-    
-    // Only register hits once per second to prevent multiple triggers
-    if (deviceValue > FORCE_THRESHOLD && (now - lastPressTime) > 1000) {
-      playHitSound();
-      setScore(prev => prev + 1);
-      setLastPressTime(now);
-    }
-  }, [deviceValues, activeDevice, gameStarted, lastPressTime, playHitSound]);
-
-  const handleDeviceClick = (device) => {
-    if (!gameStarted) return;
-
-    const deviceValue = deviceValues[device.id]?.forceValue || 0;
-    
-    if (device.id === activeDevice?.id && deviceValue > FORCE_THRESHOLD) {
-      playHitSound();
-      setScore(prev => prev + 1);
-    } else {
-      playMissSound();
-      if (score > 0) {
-        setScore(prev => prev - 1);
+    const handleTap = (status, data) => {
+      if (status === 'characteristicChanged' && 
+          data.characteristicUUID === '000015251212efde1523785feabcd123') {
+        const now = Date.now();
+        const isPressed = data.value[0] === 0;
+        
+        // Add logging for press/release events
+        console.log(`Device ${data.deviceId} ${isPressed ? 'PRESSED' : 'RELEASED'}`);
+        console.log(`Active device: ${activeDevice.id}`);
+        
+        if (isPressed && (now - lastPressTime) > 1000) {
+          if (data.deviceId === activeDevice.id) {
+            console.log('HIT! Correct device pressed');
+            playHitSound();
+            setScore(prev => prev + 1);
+          } else {
+            console.log('MISS! Wrong device pressed');
+            playMissSound();
+            if (score > 0) {
+              setScore(prev => prev - 1);
+            }
+          }
+          setLastPressTime(now);
+        }
       }
-    }
-  };
+    };
+
+    const removeListener = wsService.addListener(handleTap);
+    return () => removeListener();
+  }, [gameStarted, activeDevice, lastPressTime, playHitSound, playMissSound, score]);
 
   const startGame = () => {
     if (connectedDevices.length === 0) {
@@ -100,12 +104,11 @@ function WhacAMole() {
     }
   }, [gameStarted, connectedDevices]);
 
-  // Helper function to get device status message
+  // Update the device status display
   const getDeviceStatus = (device) => {
     if (!gameStarted) return "Game not started";
     if (device.id === activeDevice?.id) {
-      const force = deviceValues[device.id]?.forceValue || 0;
-      return `PRESS ME NOW! (Force: ${force})`;
+      return `PRESS ME NOW!`;
     }
     return "Wait...";
   };
@@ -142,20 +145,12 @@ function WhacAMole() {
         {connectedDevices.map((device, index) => {
           const color = colors[index % colors.length];
           const isActive = activeDevice?.id === device.id;
-          const deviceValue = deviceValues[device.id]?.forceValue || 0;
 
           return (
             <div key={device.id} className="text-center">
               <div
-                onClick={() => handleDeviceClick(device)}
-                className={`circle circle-${color} ${isActive ? 'circle-active animate-pulse' : ''} 
-                  ${gameStarted ? 'cursor-pointer' : ''}`}
+                className={`circle circle-${color} ${isActive ? 'circle-active animate-pulse' : ''}`}
               >
-                {deviceValue !== undefined && (
-                  <p className="force-value">
-                    <strong>{deviceValue}</strong>
-                  </p>
-                )}
               </div>
               <div className={`mt-2 font-medium ${
                 isActive ? 'text-blue-600' : 'text-gray-500'
