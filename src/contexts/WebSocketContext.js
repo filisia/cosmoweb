@@ -11,6 +11,17 @@ export function WebSocketProvider({ children }) {
   const [deviceInfo, setDeviceInfo] = useState({});
   const [deviceValues, setDeviceValues] = useState({});
 
+  const sendCharacteristicOperation = (deviceId, operation, value) => {
+    if (wsConnected) {
+      wsService.send({
+        type: 'characteristicChanged',
+        deviceId,
+        characteristicUUID: getCharacteristicUUID(operation),
+        value: Array.isArray(value) ? value : [value]
+      });
+    }
+  };
+
   useEffect(() => {
     wsService.connect();
     
@@ -19,7 +30,6 @@ export function WebSocketProvider({ children }) {
         case 'connected':
           setWsConnected(true);
           setConnectionError(null);
-          // Request device list when connected
           wsService.send({ type: 'getDevices' });
           break;
         case 'disconnected':
@@ -37,7 +47,7 @@ export function WebSocketProvider({ children }) {
               wsService.getDeviceInfo(device.id);
               wsService.subscribeToCharacteristic(
                 device.id,
-                '000015241212efde1523785feabcd123'
+                getCharacteristicUUID('READ_BUTTON_STATUS')
               );
             });
           }
@@ -53,14 +63,24 @@ export function WebSocketProvider({ children }) {
           }));
           break;
         case 'characteristicChanged':
-          if (data.characteristicUUID === '000015241212efde1523785feabcd123') {
-            setDeviceValues(prev => ({
-              ...prev,
-              [data.deviceId]: {
-                ...prev[data.deviceId],
-                forceValue: data.value[0]
-              }
-            }));
+          try {
+            const operation = getOperationFromUUID(data.characteristicUUID);
+            switch (operation) {
+              case 'READ_BUTTON_STATUS':
+                setDeviceValues(prev => ({
+                  ...prev,
+                  [data.deviceId]: {
+                    ...prev[data.deviceId],
+                    buttonStatus: data.value[0]
+                  }
+                }));
+                break;
+              // Add other characteristic handlers here
+              default:
+                break;
+            }
+          } catch (error) {
+            console.error('Unknown characteristic UUID:', error);
           }
           break;
         default:
@@ -77,6 +97,7 @@ export function WebSocketProvider({ children }) {
     connectedDevices,
     deviceInfo,
     deviceValues,
+    sendCharacteristicOperation,
   };
 
   return (
@@ -93,38 +114,3 @@ export function useWebSocket() {
   }
   return context;
 }
-
-const sendCharacteristicOperation = (deviceId, operation, value) => {
-  if (ws.current?.readyState === WebSocket.OPEN) {
-    ws.current.send(JSON.stringify({
-      type: 'characteristicChanged',
-      deviceId,
-      characteristicUUID: getCharacteristicUUID(operation),
-      value: Array.isArray(value) ? value : [value]
-    }));
-  }
-};
-
-// Example usage in a component:
-const handleButtonStatus = (value) => {
-  sendCharacteristicOperation(deviceId, 'READ_BUTTON_STATUS', value);
-};
-
-// Handle incoming messages
-const handleMessage = (event) => {
-  const message = JSON.parse(event.data);
-  
-  if (message.type === 'characteristicChanged') {
-    const operation = getOperationFromUUID(message.characteristicUUID);
-    
-    switch (operation) {
-      case 'READ_BUTTON_STATUS':
-        // Handle button state change
-        break;
-      case 'READ_SENSOR_VALUE':
-        // Handle sensor value change
-        break;
-      // ... handle other operations
-    }
-  }
-};
