@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import wsService from '../services/WebSocketService';
+import { getCharacteristicUUID, getOperationFromUUID } from '../utils/characteristics';
 
 const WebSocketContext = createContext(null);
 
@@ -92,3 +93,38 @@ export function useWebSocket() {
   }
   return context;
 }
+
+const sendCharacteristicOperation = (deviceId, operation, value) => {
+  if (ws.current?.readyState === WebSocket.OPEN) {
+    ws.current.send(JSON.stringify({
+      type: 'characteristicChanged',
+      deviceId,
+      characteristicUUID: getCharacteristicUUID(operation),
+      value: Array.isArray(value) ? value : [value]
+    }));
+  }
+};
+
+// Example usage in a component:
+const handleButtonStatus = (value) => {
+  sendCharacteristicOperation(deviceId, 'READ_BUTTON_STATUS', value);
+};
+
+// Handle incoming messages
+const handleMessage = (event) => {
+  const message = JSON.parse(event.data);
+  
+  if (message.type === 'characteristicChanged') {
+    const operation = getOperationFromUUID(message.characteristicUUID);
+    
+    switch (operation) {
+      case 'READ_BUTTON_STATUS':
+        // Handle button state change
+        break;
+      case 'READ_SENSOR_VALUE':
+        // Handle sensor value change
+        break;
+      // ... handle other operations
+    }
+  }
+};
