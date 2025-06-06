@@ -86,10 +86,39 @@ export function WebSocketProvider({ children }) {
           break;
 
         case 'deviceDisconnected':
-          console.log('[WebSocketContext] WebSocket disconnected');
-          console.log('[WebSocketContext] Calling setConnected(false)');
-          setWsConnected(false);
-          addLog('WebSocket disconnected');
+          console.log('[WebSocketContext] Device disconnected:', data.deviceId);
+          addLog(`Device disconnected: ${data.deviceId}`);
+          // Update the device's connection status
+          setConnectedDevices(prevDevices => {
+            const currentDevices = Array.isArray(prevDevices) ? prevDevices : [];
+            return currentDevices.map(device => 
+              device.id === data.deviceId 
+                ? { ...device, connected: false }
+                : device
+            );
+          });
+          break;
+
+        case 'deviceConnected':
+          console.log('[WebSocketContext] Device connected:', data.device?.id);
+          addLog(`Device connected: ${data.device?.id}`);
+          // Update connected devices immediately with the new device
+          setConnectedDevices(prevDevices => {
+            const currentDevices = Array.isArray(prevDevices) ? prevDevices : [];
+            const deviceIndex = currentDevices.findIndex(d => d.id === data.device.id);
+            
+            if (deviceIndex === -1) {
+              // Device not in list, add it
+              return [...currentDevices, data.device];
+            } else {
+              // Update existing device
+              const newDevices = [...currentDevices];
+              newDevices[deviceIndex] = { ...newDevices[deviceIndex], ...data.device, connected: true };
+              return newDevices;
+            }
+          });
+          // Request updated device list
+          wsService.getDevices();
           break;
 
         case 'devicesList':
@@ -98,26 +127,9 @@ export function WebSocketProvider({ children }) {
             addLog(`Received ${data.devices.length} devices`);
             setConnectedDevices(prevDevices => {
               const currentDevices = Array.isArray(prevDevices) ? prevDevices : [];
-
-              if (currentDevices.length !== data.devices.length) {
-                console.log('[WebSocketContext] Devices list length changed, preparing to update state');
-                console.log('[WebSocketContext] Calling setConnectedDevices(...)');
-                return data.devices;
-              }
-
-              const devicesChanged = currentDevices.some((device, index) => 
-                !data.devices[index] || 
-                device.id !== data.devices[index].id ||
-                device.name !== data.devices[index].name
-              );
-
-              if (!devicesChanged) {
-                console.log('[WebSocketContext] Devices list unchanged (shallow ID/name check), skipping state update');
-                return currentDevices;
-              }
               
-              console.log('[WebSocketContext] Devices list changed, preparing to update state');
-              console.log('[WebSocketContext] Calling setConnectedDevices(...)');
+              // Always update the devices list when we receive it
+              console.log('[WebSocketContext] Updating devices list with new data');
               return data.devices;
             });
           }

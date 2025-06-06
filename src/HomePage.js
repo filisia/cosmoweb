@@ -85,11 +85,14 @@ function HomePage({ colors }) {
 
           return (
             <div key={device.id} className="text-center">
-              <div className={`circle circle-${color} circle-connected`}>
-                {values?.forceValue !== undefined && (
+              <div className={`circle circle-${color} ${device.connected ? 'circle-connected' : 'circle-disconnected'}`}>
+                {values?.forceValue !== undefined && device.connected && (
                   <p>
                     <strong>{values.forceValue}</strong><br />Force value
                   </p>
+                )}
+                {!device.connected && (
+                  <p>Disconnected</p>
                 )}
               </div>
               {deviceDetails && (
@@ -97,6 +100,9 @@ function HomePage({ colors }) {
                   <p>S/N: {deviceDetails.serialNumber || 'N/A'}</p>
                   <p>HW Rev: {deviceDetails.hardwareRevision || 'N/A'}</p>
                   <p>FW Ver: {deviceDetails.firmwareRevision || 'N/A'}</p>
+                  <p className={device.connected ? 'text-green-600' : 'text-red-600'}>
+                    {device.connected ? 'Connected' : 'Disconnected'}
+                  </p>
                 </div>
               )}
             </div>
