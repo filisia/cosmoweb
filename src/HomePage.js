@@ -80,7 +80,6 @@ function HomePage({ colors }) {
       <div className="flex flex-wrap justify-center gap-4">
         {connectedDevices.map((device, index) => {
           const color = colors[index % colors.length];
-          const deviceDetails = deviceInfo && deviceInfo[device.id];
           const values = deviceValues && deviceValues[device.id];
 
           return (
@@ -95,16 +94,14 @@ function HomePage({ colors }) {
                   <p>Disconnected</p>
                 )}
               </div>
-              {deviceDetails && (
-                <div className="mt-2 text-sm">
-                  <p>S/N: {deviceDetails.serialNumber || 'N/A'}</p>
-                  <p>HW Rev: {deviceDetails.hardwareRevision || 'N/A'}</p>
-                  <p>FW Ver: {deviceDetails.firmwareRevision || 'N/A'}</p>
-                  <p className={device.connected ? 'text-green-600' : 'text-red-600'}>
-                    {device.connected ? 'Connected' : 'Disconnected'}
-                  </p>
-                </div>
-              )}
+              <div className="mt-2 text-sm">
+                <p>S/N: {device.serial || 'N/A'}</p>
+                <p>FW Ver: {device.firmware || 'N/A'}</p>
+                <p>Battery: {device.batteryLevel || 'N/A'}%</p>
+                <p className={device.connected ? 'text-green-600' : 'text-red-600'}>
+                  {device.connected ? 'Connected' : 'Disconnected'}
+                </p>
+              </div>
             </div>
           );
         })}
