@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import wsService from '../services/WebSocketService';
 import { getCharacteristicUUID, getOperationFromUUID } from '../utils/characteristics';
 
@@ -8,16 +8,18 @@ export function WebSocketProvider({ children }) {
   const [wsConnected, setWsConnected] = useState(false);
   const [connectionError, setConnectionError] = useState(null);
   const [connectedDevices, setConnectedDevices] = useState([]);
-  const [deviceInfo, setDeviceInfo] = useState({});
   const [deviceValues, setDeviceValues] = useState({});
   const [lockState, setLockState] = useState({ isLocked: false, deviceIds: [] });
   const [connectionLogs, setConnectionLogs] = useState([]);
 
-  const addLog = (message, type = 'info') => {
+  const addLog = useCallback((message, level = 'info') => {
     const timestamp = new Date().toISOString();
-    setConnectionLogs(prev => [...prev, { timestamp, message, type }]);
+    setConnectionLogs(prevLogs => [
+      ...prevLogs,
+      { timestamp, message, level },
+    ]);
     console.log(`[${timestamp}] ${message}`); // Also log to console
-  };
+  }, []);
 
   const sendCharacteristicOperation = (deviceId, operation, value) => {
     if (wsConnected) {
@@ -83,7 +85,7 @@ export function WebSocketProvider({ children }) {
           wsService.getDevices();
           break;
 
-        case 'disconnected':
+        case 'deviceDisconnected':
           console.log('[WebSocketContext] WebSocket disconnected');
           console.log('[WebSocketContext] Calling setConnected(false)');
           setWsConnected(false);
@@ -95,13 +97,15 @@ export function WebSocketProvider({ children }) {
           if (data.devices && Array.isArray(data.devices)) {
             addLog(`Received ${data.devices.length} devices`);
             setConnectedDevices(prevDevices => {
-              if (prevDevices.length !== data.devices.length) {
+              const currentDevices = Array.isArray(prevDevices) ? prevDevices : [];
+
+              if (currentDevices.length !== data.devices.length) {
                 console.log('[WebSocketContext] Devices list length changed, preparing to update state');
                 console.log('[WebSocketContext] Calling setConnectedDevices(...)');
                 return data.devices;
               }
 
-              const devicesChanged = prevDevices.some((device, index) => 
+              const devicesChanged = currentDevices.some((device, index) => 
                 !data.devices[index] || 
                 device.id !== data.devices[index].id ||
                 device.name !== data.devices[index].name
@@ -109,7 +113,7 @@ export function WebSocketProvider({ children }) {
 
               if (!devicesChanged) {
                 console.log('[WebSocketContext] Devices list unchanged (shallow ID/name check), skipping state update');
-                return prevDevices;
+                return currentDevices;
               }
               
               console.log('[WebSocketContext] Devices list changed, preparing to update state');
@@ -123,14 +127,16 @@ export function WebSocketProvider({ children }) {
           console.log('[WebSocketContext] Received device info:', data.deviceId);
           if (data.deviceId) {
             addLog(`Received device info for: ${data.deviceId}`);
-            setDeviceInfo(prevDevices => {
-              const deviceIndex = prevDevices.findIndex(device => device.id === data.deviceId);
+            setConnectedDevices(prevDevices => {
+              const currentDevices = Array.isArray(prevDevices) ? prevDevices : [];
+
+              const deviceIndex = currentDevices.findIndex(device => device.id === data.deviceId);
               if (deviceIndex === -1) {
                 console.log('[WebSocketContext] Received deviceInfo for unknown device', data.deviceId);
-                return prevDevices;
+                return currentDevices;
               }
 
-              const existingDevice = prevDevices[deviceIndex];
+              const existingDevice = currentDevices[deviceIndex];
               const infoChanged = 
                 existingDevice.serialNumber !== data.serialNumber ||
                 existingDevice.firmwareRevision !== data.firmwareRevision ||
@@ -141,13 +147,13 @@ export function WebSocketProvider({ children }) {
 
               if (!infoChanged) {
                 console.log('[WebSocketContext] Device info unchanged, skipping state update for device', data.deviceId);
-                return prevDevices;
+                return currentDevices;
               }
 
-              const newDevices = [...prevDevices];
+              const newDevices = [...currentDevices];
               newDevices[deviceIndex] = { ...existingDevice, ...data };
               console.log('[WebSocketContext] Device info changed, preparing to update state for device', data.deviceId);
-              console.log('[WebSocketContext] Calling setDeviceInfo(...)');
+              console.log('[WebSocketContext] Calling setConnectedDevices(...)');
               return newDevices;
             });
           }
@@ -169,7 +175,9 @@ export function WebSocketProvider({ children }) {
                 addLog(`Button state changed: ${buttonState} for device: ${data.deviceId}`);
 
                 setDeviceValues(prevDeviceValues => {
-                  const existingDeviceValues = prevDeviceValues[data.deviceId];
+                  const currentDeviceValues = typeof prevDeviceValues === 'object' && prevDeviceValues !== null ? prevDeviceValues : {};
+                  const existingDeviceValues = currentDeviceValues[data.deviceId];
+
                   if (existingDeviceValues?.buttonStatus === buttonState) {
                     console.log('[WebSocketContext] Button status unchanged, skipping state update for device', data.deviceId);
                     return prevDeviceValues;
@@ -178,7 +186,7 @@ export function WebSocketProvider({ children }) {
                   console.log('[WebSocketContext] Button status changed, preparing to update state for device', data.deviceId);
                   console.log('[WebSocketContext] Calling setDeviceValues(...)');
                   return {
-                    ...prevDeviceValues,
+                    ...currentDeviceValues,
                     [data.deviceId]: {
                       ...existingDeviceValues,
                       buttonStatus: buttonState
@@ -193,7 +201,9 @@ export function WebSocketProvider({ children }) {
                 addLog(`Press value changed: ${pressValue} for device: ${data.deviceId}`);
                 
                 setDeviceValues(prevDeviceValues => {
-                  const existingDeviceValues = prevDeviceValues[data.deviceId];
+                  const currentDeviceValues = typeof prevDeviceValues === 'object' && prevDeviceValues !== null ? prevDeviceValues : {};
+                  const existingDeviceValues = currentDeviceValues[data.deviceId];
+
                   if (existingDeviceValues?.pressValue === pressValue) {
                     console.log('[WebSocketContext] Press value unchanged, skipping state update for device', data.deviceId);
                     return prevDeviceValues;
@@ -202,7 +212,7 @@ export function WebSocketProvider({ children }) {
                   console.log('[WebSocketContext] Press value changed, preparing to update state for device', data.deviceId);
                   console.log('[WebSocketContext] Calling setDeviceValues(...)');
                   return {
-                    ...prevDeviceValues,
+                    ...currentDeviceValues,
                     [data.deviceId]: {
                       ...existingDeviceValues,
                       pressValue: pressValue
@@ -251,7 +261,6 @@ export function WebSocketProvider({ children }) {
     wsConnected,
     connectionError,
     connectedDevices,
-    deviceInfo,
     deviceValues,
     lockState,
     connectionLogs,

@@ -80,8 +80,8 @@ function HomePage({ colors }) {
       <div className="flex flex-wrap justify-center gap-4">
         {connectedDevices.map((device, index) => {
           const color = colors[index % colors.length];
-          const deviceDetails = deviceInfo[device.id];
-          const values = deviceValues[device.id];
+          const deviceDetails = deviceInfo && deviceInfo[device.id];
+          const values = deviceValues && deviceValues[device.id];
 
           return (
             <div key={device.id} className="text-center">
