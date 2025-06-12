@@ -88,7 +88,6 @@ class WebSocketService {
         if (this.shouldReconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
           this.reconnectAttempts++;
           console.log(`[WebSocketService] Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
-          this.reconnectTimeout = setTimeout(() => this.connect(), this.reconnectDelay * this.reconnectAttempts);
         } else {
           console.log('[WebSocketService] Not attempting reconnect:', {
             shouldReconnect: this.shouldReconnect,
@@ -156,6 +155,14 @@ class WebSocketService {
       hasReconnectTimeout: !!this.reconnectTimeout
     });
 
+    // Clear any polling intervals (remove if not needed anymore)
+    if (this.pollIntervals) {
+      console.log('[WebSocketService] Clearing polling intervals');
+      this.pollIntervals.forEach(interval => clearInterval(interval));
+      this.pollIntervals.clear();
+      this.pollIntervals = null; // Clean up the map
+    }
+
     this.shouldReconnect = false;
     if (this.reconnectTimeout) {
       console.log('[WebSocketService] Clearing reconnect timeout');
@@ -195,12 +202,8 @@ class WebSocketService {
   }
 
   async subscribeToCharacteristic(deviceId, characteristicUUID) {
-    // The bridge automatically sends characteristic updates, no need to subscribe
-    // Just ensure we're connected to the device
-    await this.sendMessage({ 
-      type: 'connect',
-      deviceId
-    });
+    console.log('[WebSocketService] subscribeToCharacteristic called (no operation sent to bridge):', { deviceId, characteristicUUID });
+    // This function is a no-op as the bridge sends characteristic updates automatically.
   }
 
   async writeCharacteristic(deviceId, characteristicUUID, value) {

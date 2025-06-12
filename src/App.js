@@ -8,7 +8,6 @@ import LEDModePage from './LEDModePage';
 import WhacAMole from './components/WhacAMole';
 import { WebSocketProvider } from './contexts/WebSocketContext';
 import { GameSettingsProvider } from './contexts/GameSettingsContext';
-import ConnectionLogs from './components/ConnectionLogs';
 
 function App() {
   // Define colors array for the HomePage circles
@@ -92,7 +91,6 @@ function App() {
                 />  
               </Routes>
             </main>
-            <ConnectionLogs />
           </div>
         </Router>
       </WebSocketProvider>

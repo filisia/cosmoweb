@@ -11,6 +11,20 @@ function HomePage({ colors }) {
     deviceInfo, 
     deviceValues 
   } = useWebSocket();
+  
+  // Debug: Log connected devices and their connection status
+  React.useEffect(() => {
+    if (connectedDevices && connectedDevices.length > 0) {
+      console.log('HomePage - Connected Devices:', connectedDevices.map(device => ({
+        id: device.id,
+        name: device.name,
+        connected: device.connected,
+        serial: device.serial,
+        firmware: device.firmware,
+        batteryLevel: device.batteryLevel
+      })));
+    }
+  }, [connectedDevices]);
 
   if (!wsConnected || connectionError) {
     return (
@@ -98,9 +112,20 @@ function HomePage({ colors }) {
                 <p>S/N: {device.serial || 'N/A'}</p>
                 <p>FW Ver: {device.firmware || 'N/A'}</p>
                 <p>Battery: {device.batteryLevel || 'N/A'}%</p>
-                <p className={device.connected ? 'text-green-600' : 'text-red-600'}>
-                  {device.connected ? 'Connected' : 'Disconnected'}
-                </p>
+                {/* Consider device connected if it has serial, firmware, or battery level */}
+                {(() => {
+                  const isEffectivelyConnected = device.connected || 
+                    (device.serial || device.firmware || device.batteryLevel);
+                  return (
+                    <p className={isEffectivelyConnected ? 'text-green-600' : 'text-red-600'}>
+                      {isEffectivelyConnected ? 'Connected' : 'Disconnected'} 
+                      {/* Debug info */}
+                      <span className="text-xs text-gray-500">
+                        (Raw: {String(device.connected)}, Effective: {String(isEffectivelyConnected)})
+                      </span>
+                    </p>
+                  );
+                })()}
               </div>
             </div>
           );
