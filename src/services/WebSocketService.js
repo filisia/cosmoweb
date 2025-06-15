@@ -14,6 +14,12 @@ class WebSocketService {
     this.reconnectTimeout = null;
     this.shouldReconnect = true;
     console.log('[WebSocketService] Initialized with URL:', this.wsUrl);
+    
+    // Auto-connect on initialization
+    setTimeout(() => {
+      console.log('[WebSocketService] Auto-connecting on initialization');
+      this.connect();
+    }, 1000);
   }
 
   isConnected() {
@@ -111,8 +117,11 @@ class WebSocketService {
         try {
           const data = JSON.parse(event.data);
           console.log('[WebSocketService] Received message:', data);
+          console.log('[WebSocketService] Raw message data:', event.data);
           
           if (data.type === 'devicesList') {
+            console.log('[WebSocketService] Received devicesList with', data.devices?.length, 'devices');
+            console.log('[WebSocketService] Devices:', JSON.stringify(data.devices));
             this.connectedDevices = data.devices || [];
           }
           
@@ -126,10 +135,12 @@ class WebSocketService {
               operation: data.operation
             });
           } else {
+            console.log('[WebSocketService] Notifying listeners of message type:', data.type);
             this.notifyListeners(data);
           }
         } catch (error) {
           console.error('[WebSocketService] Error parsing message:', error);
+          console.error('[WebSocketService] Raw message that failed to parse:', event.data);
           this.notifyListeners({ 
             type: 'error',
             error: 'Failed to parse message'

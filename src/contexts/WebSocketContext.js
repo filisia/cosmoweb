@@ -72,6 +72,7 @@ export function WebSocketProvider({ children }) {
       }
 
       console.log('[WebSocketContext] Handling message:', data.type);
+      console.log('[WebSocketContext] Full message data:', data);
       addLog(`Received message: ${data.type}`);
       addLog(`Message data: ${JSON.stringify(data)}`);
 
@@ -86,16 +87,15 @@ export function WebSocketProvider({ children }) {
           break;
 
         case 'deviceDisconnected':
-          console.log('[WebSocketContext] Device disconnected:', data.deviceId);
-          addLog(`Device disconnected: ${data.deviceId}`);
-          // Update the device's connection status
+          // The deviceId can be either in data.device.id or directly in data.deviceId
+          const disconnectedId = data.device?.id || data.deviceId;
+          console.log('[WebSocketContext] Device disconnected:', disconnectedId);
+          addLog(`Device disconnected: ${disconnectedId}`);
+          // Remove the disconnected device from the list
           setConnectedDevices(prevDevices => {
             const currentDevices = Array.isArray(prevDevices) ? prevDevices : [];
-            return currentDevices.map(device => 
-              device.id === data.deviceId 
-                ? { ...device, connected: false }
-                : device
-            );
+            // Filter out the disconnected device
+            return currentDevices.filter(device => device.id !== disconnectedId);
           });
           break;
 
@@ -132,24 +132,26 @@ export function WebSocketProvider({ children }) {
               // Always update the devices list with new data
               console.log('[WebSocketContext] Updating devices list with new data');
               
-              // Ensure each device has the connected property properly set
+              // Accept all devices from the bridge app as they are already filtered
+              // The bridge app now properly filters out disconnected devices
               const updatedDevices = data.devices.map(device => {
-                console.log(`[WebSocketContext] Device ${device.id} connected status:`, device.connected);
-                console.log(`[WebSocketContext] Device ${device.id} details:`, {
+                // Log each device for debugging
+                console.log(`[WebSocketContext] Processing device ${device.id}:`, {
+                  connected: device.connected,
+                  name: device.name,
                   serial: device.serial,
                   firmware: device.firmware,
-                  batteryLevel: device.batteryLevel,
-                  type: typeof device.connected
+                  batteryLevel: device.batteryLevel
                 });
                 
-                // Force connected to true if device has details
-                if ((device.connected === undefined || device.connected === false) && 
-                    (device.serial || device.firmware || device.batteryLevel)) {
-                  console.log(`[WebSocketContext] Setting device ${device.id} as connected based on device details`);
-                  return { ...device, connected: true };
-                }
-                return device;
-              });
+                // Ensure connected is explicitly set to true for all devices from bridge
+                // since the bridge now only sends truly connected devices
+                if (device.connected !== true) {
+                  console.log(`[WebSocketContext] Setting device ${device.id} as connected explicitly`);
+                    return { ...device, connected: true };
+                  }
+                  return device;
+                });
               
               console.log('[WebSocketContext] Updated devices:', updatedDevices);
               return updatedDevices;
