@@ -121,8 +121,13 @@ class WebSocketService {
           
           if (data.type === 'devicesList') {
             console.log('[WebSocketService] Received devicesList with', data.devices?.length, 'devices');
-            console.log('[WebSocketService] Devices:', JSON.stringify(data.devices));
-            this.connectedDevices = data.devices || [];
+            // Transform the devices data to show 'Available' instead of 'Connected' when connected is false
+            const transformedDevices = data.devices?.map(device => ({
+              ...device,
+              status: device.connected ? 'Connected' : 'Available'
+            })) || [];
+            console.log('[WebSocketService] Devices:', JSON.stringify(transformedDevices));
+            this.connectedDevices = transformedDevices;
           }
           
           // Handle error messages from the bridge

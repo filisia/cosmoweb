@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import wsService from './services/WebSocketService';
 import { useWebSocket } from './contexts/WebSocketContext';
+import cosmoLogo from './assets/images/cosmo_logo.png';
 
 function HomePage({ colors }) {
   const { 
@@ -12,6 +13,9 @@ function HomePage({ colors }) {
     deviceValues 
   } = useWebSocket();
   
+  const [lockState, setLockState] = useState({ isLocked: false, deviceIds: [] });
+  const [lastScanTime, setLastScanTime] = useState(new Date());
+
   // Debug: Log connected devices and their connection status
   React.useEffect(() => {
     if (connectedDevices && connectedDevices.length > 0) {
@@ -19,12 +23,54 @@ function HomePage({ colors }) {
         id: device.id,
         name: device.name,
         connected: device.connected,
+        status: device.status,
         serial: device.serial,
         firmware: device.firmware,
         batteryLevel: device.batteryLevel
       })));
     }
   }, [connectedDevices]);
+
+  // Handle lock/unlock functionality
+  const handleLockDevices = () => {
+    const newLockState = !lockState.isLocked;
+    const deviceIds = newLockState ? connectedDevices.filter(d => d.connected).map(d => d.id) : [];
+    
+    const lockMessage = {
+      type: 'lockDevices',
+      isLocked: newLockState,
+      deviceIds: deviceIds
+    };
+    
+    wsService.sendMessage(lockMessage);
+    setLockState({ isLocked: newLockState, deviceIds });
+  };
+
+  // Handle scan devices
+  const handleScanDevices = () => {
+    const scanMessage = { type: 'getDevices' };
+    wsService.sendMessage(scanMessage);
+    setLastScanTime(new Date());
+  };
+
+  // Format time for display
+  const formatTime = (date) => {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  // Get device status display
+  const getDeviceStatus = (device) => {
+    if (device.status === 'available') return 'Available';
+    if (device.connected) return 'Connected';
+    return 'Available';
+  };
+
+  // Get status CSS class
+  const getStatusClass = (device) => {
+    if (device.status === 'available') return 'status-available';
+    if (device.connected) return 'status-connected';
+    return 'status-available';
+  };
 
   if (!wsConnected || connectionError) {
     return (
@@ -86,51 +132,61 @@ function HomePage({ colors }) {
   }
 
   return (
-    <div className="p-4 space-y-4">
-      <div className="text-center p-2">
-        Cosmoids: {connectedDevices.length}
+    <div className="cosmo-container">
+      <div className="cosmo-logo">
+        <img src={cosmoLogo} alt="Cosmo Logo" className="cosmo-logo-image" />
       </div>
-
-      <div className="flex flex-wrap justify-center gap-4">
-        {connectedDevices.map((device, index) => {
-          const color = colors[index % colors.length];
-          const values = deviceValues && deviceValues[device.id];
-
-          return (
-            <div key={device.id} className="text-center">
-              <div className={`circle circle-${color} ${device.connected ? 'circle-connected' : 'circle-disconnected'}`}>
-                {values?.forceValue !== undefined && device.connected && (
-                  <p>
-                    <strong>{values.forceValue}</strong><br />Force value
-                  </p>
-                )}
-                {!device.connected && (
-                  <p>Disconnected</p>
-                )}
-              </div>
-              <div className="mt-2 text-sm">
-                <p>S/N: {device.serial || 'N/A'}</p>
-                <p>FW Ver: {device.firmware || 'N/A'}</p>
-                <p>Battery: {device.batteryLevel || 'N/A'}%</p>
-                {/* Consider device connected if it has serial, firmware, or battery level */}
-                {(() => {
-                  const isEffectivelyConnected = device.connected || 
-                    (device.serial || device.firmware || device.batteryLevel);
-                  return (
-                    <p className={isEffectivelyConnected ? 'text-green-600' : 'text-red-600'}>
-                      {isEffectivelyConnected ? 'Connected' : 'Disconnected'} 
-                      {/* Debug info */}
-                      <span className="text-xs text-gray-500">
-                        (Raw: {String(device.connected)}, Effective: {String(isEffectivelyConnected)})
-                      </span>
-                    </p>
-                  );
-                })()}
-              </div>
-            </div>
-          );
-        })}
+      
+      <div className="cosmo-header-controls">
+        <h2 className="cosmo-available-devices-title">Available Devices</h2>
+        <button 
+          onClick={handleLockDevices}
+          className={`cosmo-button cosmo-lock-button ${lockState.isLocked ? 'locked' : ''}`}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          {lockState.isLocked ? 'Unlock Devices' : 'Lock Devices'}
+        </button>
       </div>
+      
+      <div className="cosmo-devices-table-container">
+        <table className="cosmo-devices-table">
+          <thead>
+            <tr>
+              <th>Serial No.</th>
+              <th>Firmware</th>
+              <th>Battery</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {connectedDevices.length === 0 ? (
+              <tr>
+                <td colSpan="5" className="cosmo-no-devices">
+                  No devices found. Make sure your Cosmo devices are powered on and nearby.
+                </td>
+              </tr>
+            ) : (
+              connectedDevices.map((device) => (
+                <tr key={device.id}>
+                  <td>{device.serial || 'N/A'}</td>
+                  <td>{device.firmware || 'N/A'}</td>
+                  <td>{device.batteryLevel ? `${device.batteryLevel}%` : 'N/A'}</td>
+                  <td>
+                    <span className={getStatusClass(device)}>
+                      {getDeviceStatus(device)}
+                    </span>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+      
+      
     </div>
   );
 }

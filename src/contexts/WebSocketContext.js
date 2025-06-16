@@ -143,15 +143,9 @@ export function WebSocketProvider({ children }) {
                   firmware: device.firmware,
                   batteryLevel: device.batteryLevel
                 });
-                
-                // Ensure connected is explicitly set to true for all devices from bridge
-                // since the bridge now only sends truly connected devices
-                if (device.connected !== true) {
-                  console.log(`[WebSocketContext] Setting device ${device.id} as connected explicitly`);
-                    return { ...device, connected: true };
-                  }
-                  return device;
-                });
+                // Do not override the connected property!
+                return device;
+              });
               
               console.log('[WebSocketContext] Updated devices:', updatedDevices);
               return updatedDevices;
