@@ -8,6 +8,8 @@ import LEDModePage from './LEDModePage';
 import WhacAMole from './components/WhacAMole';
 import { WebSocketProvider } from './contexts/WebSocketContext';
 import { GameSettingsProvider } from './contexts/GameSettingsContext';
+import ExerciseSettings from './components/ExerciseSettings';
+import ExerciseGame from './components/ExerciseGame';
 
 function App() {
   // Define colors array for the HomePage circles
@@ -32,34 +34,10 @@ function App() {
                     </li>
                     <li>
                       <Link 
-                        to="/game-press" 
+                        to="/exercise-settings" 
                         className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
                       >
-                        Game Press
-                      </Link>
-                    </li>
-                    <li>
-                      <Link 
-                        to="/grow-shrink-game" 
-                        className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
-                      >
-                        Grow/Shrink Game
-                      </Link>
-                    </li>
-                    <li>
-                      <Link 
-                        to="/led-mode" 
-                        className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
-                      >
-                        LED Mode
-                      </Link>
-                    </li>
-                    <li>
-                      <Link 
-                        to="/whac-a-mole" 
-                        className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
-                      >
-                        Whac-a-Mole
+                        Exercise
                       </Link>
                     </li>
                   </ul>
@@ -74,21 +52,13 @@ function App() {
                   element={<HomePage colors={colors} />} 
                 />
                 <Route 
-                  path="/game-press" 
-                  element={<GamePress />} 
+                  path="/exercise-settings" 
+                  element={<ExerciseSettings />} 
                 />
                 <Route 
-                  path="/grow-shrink-game" 
-                  element={<GrowShrinkGame />} 
+                  path="/exercise" 
+                  element={<ExerciseGame />} 
                 />
-                <Route 
-                  path="/led-mode" 
-                  element={<LEDModePage />} 
-                />
-                <Route 
-                  path="/whac-a-mole" 
-                  element={<WhacAMole />} 
-                />  
               </Routes>
             </main>
           </div>
