@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useWebSocket } from '../contexts/WebSocketContext';
+import wsService from '../services/WebSocketService';
 
 const durations = [
   { label: '30 seconds', value: 30 },
@@ -7,12 +9,31 @@ const durations = [
   { label: '2 minutes', value: 120 },
 ];
 
+const colorMap = [
+  { name: 'blue', rgb: [0, 0, 4] },
+  { name: 'green', rgb: [0, 4, 0] },
+  { name: 'yellow', rgb: [4, 4, 0] },
+  { name: 'orange', rgb: [4, 2, 0] },
+  { name: 'red', rgb: [4, 0, 0] },
+  { name: 'purple', rgb: [2, 0, 4] },
+  { name: 'darkYellow', rgb: [3, 3, 0] },
+  { name: 'purple2', rgb: [2, 0, 3] },
+];
+
 export default function ExerciseSettings() {
   const [numCosmos, setNumCosmos] = useState(2);
   const [duration, setDuration] = useState(30);
   const navigate = useNavigate();
+  const { connectedDevices } = useWebSocket();
 
   const handlePlay = () => {
+    // Set colors for the Cosmos that will be used in the game
+    const cosmosToUse = connectedDevices.slice(0, numCosmos);
+    cosmosToUse.forEach((device, idx) => {
+      const [r, g, b] = colorMap[idx % colorMap.length].rgb;
+      wsService.setColor(device.id, r, g, b);
+    });
+    
     navigate('/exercise', { state: { numCosmos, duration } });
   };
 

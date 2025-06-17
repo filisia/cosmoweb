@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import wsService from '../services/WebSocketService';
@@ -24,25 +24,19 @@ export default function ExerciseGame() {
   const [score, setScore] = useState(0);
   const { connectedDevices, deviceValues } = useWebSocket();
   const intervalRef = useRef();
-  const cosmosToUse = connectedDevices.slice(0, numCosmos);
-  const lastPressRef = useRef(false);
+  const cosmosToUse = useMemo(() => connectedDevices.slice(0, numCosmos), [connectedDevices, numCosmos]);
+  const lastPressRef = useRef({});
+  const isUnmountingRef = useRef(false);
 
-  // Set colors on mount and when activeIndex changes
+  // Cleanup: turn off all devices only when component unmounts
   useEffect(() => {
-    if (!cosmosToUse.length) return;
-    cosmosToUse.forEach((device, idx) => {
-      if (idx === activeIndex) {
-        const [r, g, b] = colorMap[idx % colorMap.length].rgb;
-        wsService.setColor(device.id, r, g, b);
-      } else {
-        wsService.setColor(device.id, 0, 0, 0); // turn off
-      }
-    });
-    // Cleanup: turn off all on unmount
     return () => {
-      cosmosToUse.forEach(device => wsService.setColor(device.id, 0, 0, 0));
+      if (!isUnmountingRef.current) {
+        isUnmountingRef.current = true;
+        cosmosToUse.forEach(device => wsService.setColor(device.id, 0, 1, 2));
+      }
     };
-  }, [activeIndex, cosmosToUse]);
+  }, []); // Empty dependency array means this only runs on mount/unmount
 
   useEffect(() => {
     if (!numCosmos || !duration) {
@@ -65,25 +59,27 @@ export default function ExerciseGame() {
     return () => clearInterval(intervalRef.current);
   }, [gameOver]);
 
-  // Listen for button press on the active Cosmo
+  // Listen for button press on all Cosmos, but only react if it's the active one
   useEffect(() => {
     if (gameOver) return;
+    if (!cosmosToUse.length) return;
     const activeDevice = cosmosToUse[activeIndex];
     if (!activeDevice) return;
-    const buttonState = deviceValues[activeDevice.id]?.buttonStatus;
-    // Only count a press if it wasn't pressed last render
-    if ((buttonState === true || buttonState === 0) && !lastPressRef.current) {
-      setScore(s => s + 1);
-      setActiveIndex(i => (i + 1) % cosmosToUse.length);
-      lastPressRef.current = true;
-    } else if (buttonState !== true && buttonState !== 0) {
-      lastPressRef.current = false;
-    }
+    cosmosToUse.forEach((device, idx) => {
+      const buttonState = deviceValues[device.id]?.buttonStatus;
+      if ((buttonState === true || buttonState === 0) && !lastPressRef.current[device.id]) {
+        lastPressRef.current[device.id] = true;
+        if (device.id === activeDevice.id) {
+          setScore(s => s + 1);
+          setActiveIndex(i => (i + 1) % cosmosToUse.length);
+        }
+      } else if (buttonState !== true && buttonState !== 0) {
+        lastPressRef.current[device.id] = false;
+      }
+    });
   }, [deviceValues, activeIndex, cosmosToUse, gameOver]);
 
   if (gameOver) {
-    // Turn off all devices when game is over
-    cosmosToUse.forEach(device => wsService.setColor(device.id, 0, 0, 0));
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-r from-blue-200 to-purple-200">
         <div className="bg-white p-8 rounded shadow-md w-full max-w-md text-center">
