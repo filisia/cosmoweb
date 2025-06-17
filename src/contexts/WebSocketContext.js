@@ -141,7 +141,8 @@ export function WebSocketProvider({ children }) {
                   name: device.name,
                   serial: device.serial,
                   firmware: device.firmware,
-                  batteryLevel: device.batteryLevel
+                  batteryLevel: device.batteryLevel,
+                  color: device.color
                 });
                 // Do not override the connected property!
                 return device;
@@ -150,6 +151,8 @@ export function WebSocketProvider({ children }) {
               console.log('[WebSocketContext] Updated devices:', updatedDevices);
               return updatedDevices;
             });
+          } else {
+            console.log('[WebSocketContext] Received invalid devices data:', data);
           }
           break;
 
@@ -298,7 +301,21 @@ export function WebSocketProvider({ children }) {
 
         case 'devices':
           console.log('Handling devices message:', data.devices);
-          setConnectedDevices(data.devices);
+          if (Array.isArray(data.devices)) {
+            setConnectedDevices(data.devices);
+            // Update device values for each device
+            data.devices.forEach(device => {
+              setDeviceValues(prev => ({
+                ...prev,
+                [device.id]: {
+                  ...prev[device.id],
+                  connected: device.connected,
+                  batteryLevel: device.batteryLevel,
+                  color: device.color
+                }
+              }));
+            });
+          }
           break;
 
         default:
