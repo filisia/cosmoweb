@@ -142,20 +142,20 @@ export default function ExerciseGame() {
           <div
             key={device.id}
             className={`circle circle-${colorMap[idx % colorMap.length].name} ${
-              idx === activeIndex ? 'circle-active animate-pulse' : ''
+              idx === activeIndex ? 'circle-active animate-pulse' : 'opacity-50'
             } ${
               feedback === 'correct' && idx === activeIndex ? 'ring-4 ring-green-500' :
               feedback === 'incorrect' && idx === activeIndex ? 'ring-4 ring-red-500' : ''
             }`}
             style={{ 
-              width: 100, 
-              height: 100, 
+              width: idx === activeIndex ? 100 : 80, 
+              height: idx === activeIndex ? 100 : 80, 
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center', 
-              fontSize: 32,
+              fontSize: idx === activeIndex ? 32 : 24,
               transform: idx === activeIndex ? 'scale(1.1)' : 'scale(1)',
-              transition: 'transform 0.2s ease-in-out'
+              transition: 'all 0.2s ease-in-out'
             }}
           />
         ))}
