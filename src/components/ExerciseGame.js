@@ -4,12 +4,12 @@ import { useWebSocket } from '../contexts/WebSocketContext';
 import wsService from '../services/WebSocketService';
 
 const colorMap = [
-  { name: 'blue', rgb: [0, 0, 4] },
-  { name: 'green', rgb: [0, 4, 0] },
+  { name: 'blue', rgb: [0, 1, 4] },
+  { name: 'green', rgb: [1, 4, 2] },
   { name: 'yellow', rgb: [4, 4, 0] },
-  { name: 'orange', rgb: [4, 2, 0] },
-  { name: 'red', rgb: [4, 0, 0] },
-  { name: 'purple', rgb: [2, 0, 4] },
+  { name: 'orange', rgb: [4, 3, 0] },
+  { name: 'red', rgb: [4, 1, 2] },
+  { name: 'purple', rgb: [4, 1, 4] },
   { name: 'darkYellow', rgb: [3, 3, 0] },
   { name: 'purple2', rgb: [2, 0, 3] },
 ];
@@ -33,7 +33,11 @@ export default function ExerciseGame() {
     return () => {
       if (!isUnmountingRef.current) {
         isUnmountingRef.current = true;
-        cosmosToUse.forEach(device => wsService.setColor(device.id, 0, 1, 2));
+        cosmosToUse.forEach((device, idx) => {
+          wsService.setMode(device.id, 4); // Set to Button Inverted mode
+          const [r, g, b] = colorMap[idx % colorMap.length].rgb;
+          wsService.setColor(device.id, r, g, b);
+        });
       }
     };
   }, []); // Empty dependency array means this only runs on mount/unmount

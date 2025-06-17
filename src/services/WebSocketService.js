@@ -260,6 +260,20 @@ class WebSocketService {
     }
   }
 
+  setMode(deviceId, mode) {
+    console.log('Setting mode:', { deviceId, mode });
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      let jsonToSend = {
+        type: 'setMode',
+        deviceId: deviceId,
+        data: [mode]
+      };
+      this.ws.send(JSON.stringify(jsonToSend));
+    } else {
+      console.error('WebSocket is not connected');
+    }
+  }
+
   setLuminosity(deviceId, intensity) {
     console.log('Setting luminosity:', { deviceId, intensity });
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
