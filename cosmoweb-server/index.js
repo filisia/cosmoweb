@@ -1,7 +1,26 @@
 const WebSocket = require('ws');
 const http = require('http');
 
+// Log environment variables
+console.log('Environment variables:', {
+  PORT: process.env.PORT,
+  NODE_ENV: process.env.NODE_ENV
+});
+
 const server = http.createServer();
+
+// Add health check endpoint
+server.on('request', (req, res) => {
+  console.log('Received HTTP request:', req.url);
+  if (req.url === '/health') {
+    res.writeHead(200);
+    res.end('OK');
+  } else {
+    res.writeHead(404);
+    res.end('Not Found');
+  }
+});
+
 const wss = new WebSocket.Server({ server });
 
 // Store connected devices
@@ -9,6 +28,7 @@ const devices = new Map();
 
 // Function to broadcast to all clients
 const broadcastToAll = (message) => {
+  console.log('Broadcasting to all clients:', message);
   wss.clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(JSON.stringify(message));
@@ -20,9 +40,11 @@ wss.on('connection', (ws) => {
   console.log('Client connected');
   
   // Send current devices list to new client
+  const initialDevices = Array.from(devices.values());
+  console.log('Sending initial devices to new client:', initialDevices);
   ws.send(JSON.stringify({
     type: 'devices',
-    devices: Array.from(devices.values())
+    devices: initialDevices
   }));
 
   ws.on('message', (message) => {
@@ -48,9 +70,11 @@ wss.on('connection', (ws) => {
 
         case 'getDevices':
           console.log('Handling getDevices request');
+          const currentDevices = Array.from(devices.values());
+          console.log('Sending current devices:', currentDevices);
           ws.send(JSON.stringify({
             type: 'devices',
-            devices: Array.from(devices.values())
+            devices: currentDevices
           }));
           break;
 
@@ -70,7 +94,7 @@ wss.on('connection', (ws) => {
               firmwareVersion: data.firmwareVersion || existingDevice?.firmwareVersion
             };
             devices.set(data.deviceId, updatedDevice);
-            console.log('Current devices:', Array.from(devices.values()));
+            console.log('Current devices after update:', Array.from(devices.values()));
             broadcastToAll({
               type: 'devices',
               devices: Array.from(devices.values())
@@ -119,6 +143,7 @@ wss.on('connection', (ws) => {
 
 // Use the PORT environment variable provided by Render
 const PORT = process.env.PORT || 8080;
+console.log(`Starting server on port ${PORT}`);
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`WebSocket server is running on port ${PORT}`);
 });

@@ -141,7 +141,7 @@ export function WebSocketProvider({ children }) {
                   name: device.name,
                   serial: device.serial,
                   firmware: device.firmware,
-                  batteryLevel: device.batteryLevel,
+                    batteryLevel: device.batteryLevel,
                   color: device.color
                 });
                 // Do not override the connected property!
