@@ -3,7 +3,7 @@ const config = {
     wsUrl: 'ws://localhost:8080',
   },
   production: {
-    wsUrl: 'wss://cosmoids.vercel.app/',
+    wsUrl: 'wss://cosmoweb-server.onrender.com',
   },
 };
 
