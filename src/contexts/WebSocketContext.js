@@ -266,40 +266,29 @@ export function WebSocketProvider({ children }) {
             pressValue: data.pressValue
           });
           addLog(`Button state changed for device ${data.deviceId}: state=${data.buttonState}, press=${data.pressValue}`);
-          
-          if (data.deviceId) {
-            setDeviceValues(prevDeviceValues => {
-              const currentDeviceValues = typeof prevDeviceValues === 'object' && prevDeviceValues !== null ? prevDeviceValues : {};
-              const existingDeviceValues = currentDeviceValues[data.deviceId] || {};
-              
-              // Check if values actually changed
-              if (existingDeviceValues.buttonStatus === data.buttonState && 
-                  existingDeviceValues.pressValue === data.pressValue) {
-                console.log('[WebSocketContext] Button state unchanged, skipping state update for device', data.deviceId);
-                return prevDeviceValues;
+
+          setDeviceValues(prevDeviceValues => {
+            const currentDeviceValues = typeof prevDeviceValues === 'object' && prevDeviceValues !== null ? prevDeviceValues : {};
+            const existingDeviceValues = currentDeviceValues[data.deviceId];
+
+            console.log('[WebSocketContext] Button state changed event, updating state for device', data.deviceId, {
+              from: existingDeviceValues,
+              to: {
+                ...existingDeviceValues,
+                buttonState: data.buttonState,
+                pressValue: data.pressValue
               }
-              
-              console.log('[WebSocketContext] Button state changed event, updating state for device', data.deviceId, {
-                from: {
-                  buttonStatus: existingDeviceValues.buttonStatus,
-                  pressValue: existingDeviceValues.pressValue
-                },
-                to: {
-                  buttonStatus: data.buttonState,
-                  pressValue: data.pressValue
-                }
-              });
-              
-              return {
-                ...currentDeviceValues,
-                [data.deviceId]: {
-                  ...existingDeviceValues,
-                  buttonStatus: data.buttonState,
-                  pressValue: data.pressValue
-                }
-              };
             });
-          }
+
+            return {
+              ...currentDeviceValues,
+              [data.deviceId]: {
+                ...existingDeviceValues,
+                buttonState: data.buttonState,
+                pressValue: data.pressValue
+              }
+            };
+          });
           break;
           
         case 'error':

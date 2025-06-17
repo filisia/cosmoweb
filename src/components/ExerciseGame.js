@@ -22,6 +22,7 @@ export default function ExerciseGame() {
   const [timeLeft, setTimeLeft] = useState(duration);
   const [gameOver, setGameOver] = useState(false);
   const [score, setScore] = useState(0);
+  const [feedback, setFeedback] = useState(null); // 'correct' or 'incorrect'
   const { connectedDevices, deviceValues } = useWebSocket();
   const intervalRef = useRef();
   const cosmosToUse = useMemo(() => connectedDevices.slice(0, numCosmos), [connectedDevices, numCosmos]);
@@ -69,15 +70,37 @@ export default function ExerciseGame() {
     if (!cosmosToUse.length) return;
     const activeDevice = cosmosToUse[activeIndex];
     if (!activeDevice) return;
+
+    console.log('Checking button states:', {
+      activeDevice: activeDevice.id,
+      deviceValues,
+      lastPressRef: lastPressRef.current
+    });
+
     cosmosToUse.forEach((device, idx) => {
-      const buttonState = deviceValues[device.id]?.buttonStatus;
-      if ((buttonState === true || buttonState === 0) && !lastPressRef.current[device.id]) {
+      const buttonState = deviceValues[device.id]?.buttonState;
+      console.log(`Device ${device.id} button state:`, buttonState);
+      
+      if (buttonState === 'pressed' && !lastPressRef.current[device.id]) {
+        console.log(`Button pressed for device ${device.id}, active device is ${activeDevice.id}`);
         lastPressRef.current[device.id] = true;
         if (device.id === activeDevice.id) {
+          console.log('Correct button pressed!');
+          setFeedback('correct');
           setScore(s => s + 1);
-          setActiveIndex(i => (i + 1) % cosmosToUse.length);
+          setTimeout(() => {
+            setFeedback(null);
+            setActiveIndex(i => (i + 1) % cosmosToUse.length);
+          }, 500);
+        } else {
+          console.log('Wrong button pressed!');
+          setFeedback('incorrect');
+          setTimeout(() => {
+            setFeedback(null);
+          }, 500);
         }
-      } else if (buttonState !== true && buttonState !== 0) {
+      } else if (buttonState === 'released') {
+        console.log(`Button released for device ${device.id}`);
         lastPressRef.current[device.id] = false;
       }
     });
@@ -106,16 +129,35 @@ export default function ExerciseGame() {
         <h1 className="text-3xl font-bold mb-2">Exercise Game</h1>
         <p className="text-lg">Time Left: {timeLeft}s</p>
         <p className="text-lg">Score: {score}</p>
+        {feedback && (
+          <p className={`text-xl font-bold mt-2 ${
+            feedback === 'correct' ? 'text-green-600' : 'text-red-600'
+          }`}>
+            {feedback === 'correct' ? '✓ Correct!' : '✗ Wrong button!'}
+          </p>
+        )}
       </div>
       <div className="flex flex-wrap justify-center gap-6">
         {cosmosToUse.map((device, idx) => (
           <div
             key={device.id}
-            className={`circle circle-${colorMap[idx % colorMap.length].name} ${idx === activeIndex ? 'circle-active animate-pulse' : ''}`}
-            style={{ width: 100, height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32 }}
-          >
-            {device.name || device.id}
-          </div>
+            className={`circle circle-${colorMap[idx % colorMap.length].name} ${
+              idx === activeIndex ? 'circle-active animate-pulse' : ''
+            } ${
+              feedback === 'correct' && idx === activeIndex ? 'ring-4 ring-green-500' :
+              feedback === 'incorrect' && idx === activeIndex ? 'ring-4 ring-red-500' : ''
+            }`}
+            style={{ 
+              width: 100, 
+              height: 100, 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              fontSize: 32,
+              transform: idx === activeIndex ? 'scale(1.1)' : 'scale(1)',
+              transition: 'transform 0.2s ease-in-out'
+            }}
+          />
         ))}
       </div>
     </div>
