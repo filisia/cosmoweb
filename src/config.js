@@ -3,7 +3,7 @@ const config = {
     wsUrl: 'ws://localhost:8080',
   },
   production: {
-    wsUrl: 'wss://cosmoids.vercel.app/', // Replace with your actual production WebSocket URL
+    wsUrl: 'wss://cosmoweb-b7ue2ovdn-alexandros-projects-5a23d014.vercel.app',
   },
 };
 
