@@ -296,6 +296,11 @@ export function WebSocketProvider({ children }) {
           addLog(`Bridge error: ${data.error || 'Unknown error occurred'}`);
           break;
 
+        case 'devices':
+          console.log('Handling devices message:', data.devices);
+          setConnectedDevices(data.devices);
+          break;
+
         default:
           console.log('[WebSocketContext] Unhandled message type:', data.type);
           addLog(`Unhandled message type: ${data.type}`);
