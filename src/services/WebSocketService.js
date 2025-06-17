@@ -1,19 +1,25 @@
+import config from '../config';
+
 class WebSocketService {
   constructor() {
     this.ws = null;
     this.listeners = new Set();
-    this.connecting = false;
-    this.connected = false;
-    this.reconnectAttempts = 0;
-    this.maxReconnectAttempts = 5;
-    this.reconnectDelay = 1000;
+    this.state = {
+      connecting: false,
+      connected: false,
+      shouldReconnect: true,
+      reconnectAttempts: 0
+    };
+    this.reconnectTimeout = null;
+    this.heartbeatInterval = null;
+    this.lastHeartbeat = null;
+    this.heartbeatTimeout = null;
+    this.url = config.wsUrl;
     this.connectedDevices = [];
     this.connectionState = false;
-    // Get the WebSocket URL from environment variable or use default
-    this.wsUrl = process.env.REACT_APP_WS_URL || 'ws://localhost:8080';
-    this.reconnectTimeout = null;
-    this.shouldReconnect = true;
-    console.log('[WebSocketService] Initialized with URL:', this.wsUrl);
+    this.maxReconnectAttempts = 5;
+    this.reconnectDelay = 1000;
+    console.log('[WebSocketService] Initialized with URL:', this.url);
     
     // Auto-connect on initialization
     setTimeout(() => {
@@ -53,28 +59,28 @@ class WebSocketService {
 
   connect() {
     console.log('[WebSocketService] Connect called. Current state:', {
-      connecting: this.connecting,
-      connected: this.connected,
-      shouldReconnect: this.shouldReconnect,
-      reconnectAttempts: this.reconnectAttempts
+      connecting: this.state.connecting,
+      connected: this.state.connected,
+      shouldReconnect: this.state.shouldReconnect,
+      reconnectAttempts: this.state.reconnectAttempts
     });
 
-    if (this.connecting || this.connected) {
+    if (this.state.connecting || this.state.connected) {
       console.log('[WebSocketService] Already connecting or connected, skipping connect');
       return;
     }
 
-    this.connecting = true;
-    console.log(`[WebSocketService] Attempting to connect to WebSocket at ${this.wsUrl}`);
+    this.state.connecting = true;
+    console.log(`[WebSocketService] Attempting to connect to WebSocket at ${this.url}`);
 
     try {
-      this.ws = new WebSocket(this.wsUrl);
+      this.ws = new WebSocket(this.url);
 
       this.ws.onopen = () => {
         console.log('[WebSocketService] WebSocket Connected');
-        this.connecting = false;
-        this.connected = true;
-        this.reconnectAttempts = 0;
+        this.state.connecting = false;
+        this.state.connected = true;
+        this.state.reconnectAttempts = 0;
         this.connectionState = true;
         this.notifyListeners({ type: 'connected' });
         this.sendMessage({ type: 'getDevices' });
@@ -86,18 +92,18 @@ class WebSocketService {
           reason: event.reason,
           wasClean: event.wasClean
         });
-        this.connecting = false;
-        this.connected = false;
+        this.state.connecting = false;
+        this.state.connected = false;
         this.connectionState = false;
         this.notifyListeners({ type: 'disconnected' });
 
-        if (this.shouldReconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
-          this.reconnectAttempts++;
-          console.log(`[WebSocketService] Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
+        if (this.state.shouldReconnect && this.state.reconnectAttempts < this.maxReconnectAttempts) {
+          this.state.reconnectAttempts++;
+          console.log(`[WebSocketService] Attempting to reconnect (${this.state.reconnectAttempts}/${this.maxReconnectAttempts})...`);
         } else {
           console.log('[WebSocketService] Not attempting reconnect:', {
-            shouldReconnect: this.shouldReconnect,
-            reconnectAttempts: this.reconnectAttempts,
+            shouldReconnect: this.state.shouldReconnect,
+            reconnectAttempts: this.state.reconnectAttempts,
             maxReconnectAttempts: this.maxReconnectAttempts
           });
         }
@@ -105,7 +111,7 @@ class WebSocketService {
 
       this.ws.onerror = (error) => {
         console.error('[WebSocketService] WebSocket Error:', error);
-        this.connecting = false;
+        this.state.connecting = false;
         this.connectionState = false;
         this.notifyListeners({ 
           type: 'error',
@@ -154,7 +160,7 @@ class WebSocketService {
       };
     } catch (error) {
       console.error('[WebSocketService] Error creating WebSocket:', error);
-      this.connecting = false;
+      this.state.connecting = false;
       this.connectionState = false;
       this.notifyListeners({ 
         type: 'error',
@@ -165,9 +171,9 @@ class WebSocketService {
 
   disconnect() {
     console.log('[WebSocketService] Disconnect called. Current state:', {
-      connecting: this.connecting,
-      connected: this.connected,
-      shouldReconnect: this.shouldReconnect,
+      connecting: this.state.connecting,
+      connected: this.state.connected,
+      shouldReconnect: this.state.shouldReconnect,
       hasReconnectTimeout: !!this.reconnectTimeout
     });
 
@@ -179,7 +185,7 @@ class WebSocketService {
       this.pollIntervals = null; // Clean up the map
     }
 
-    this.shouldReconnect = false;
+    this.state.shouldReconnect = false;
     if (this.reconnectTimeout) {
       console.log('[WebSocketService] Clearing reconnect timeout');
       clearTimeout(this.reconnectTimeout);
@@ -190,13 +196,13 @@ class WebSocketService {
       this.ws.close();
       this.ws = null;
     }
-    this.connecting = false;
-    this.connected = false;
+    this.state.connecting = false;
+    this.state.connected = false;
   }
 
   async sendMessage(message) {
     console.log('[WebSocketService] Sending message:', message);
-    if (!this.connected) {
+    if (!this.state.connected) {
       console.error('[WebSocketService] Cannot send message - not connected');
       throw new Error('WebSocket is not connected');
     }
