@@ -61,268 +61,52 @@ export function WebSocketProvider({ children }) {
     }
   };
 
+  const handleMessage = useCallback((message) => {
+    console.log('[WebSocketContext] Handling message:', message.type);
+    console.log('[WebSocketContext] Full message data:', message);
+
+    switch (message.type) {
+      case 'connected':
+        setWsConnected(true);
+        console.log('[WebSocketContext] WebSocket connected');
+        console.log('[WebSocketContext] Requesting device list...');
+        wsService.getDevices();
+        break;
+
+      case 'disconnected':
+        setWsConnected(false);
+        console.log('[WebSocketContext] WebSocket disconnected');
+        break;
+
+      case 'devices':
+        console.log('[WebSocketContext] Handling devices message:', message.devices);
+        setConnectedDevices(message.devices);
+        break;
+
+      case 'buttonStateChanged':
+        console.log('[WebSocketContext] Button state changed:', message);
+        // Update the device's button state in the devices list
+        setConnectedDevices(prevDevices => 
+          prevDevices.map(device => 
+            device.id === message.deviceId 
+              ? { ...device, buttonState: message.state }
+              : device
+          )
+        );
+        break;
+
+      case 'error':
+        console.error('[WebSocketContext] Error:', message.error);
+        break;
+
+      default:
+        console.log('[WebSocketContext] Unhandled message type:', message.type);
+    }
+  }, [wsService]);
+
   useEffect(() => {
     console.log('[WebSocketContext] Setting up WebSocket connection');
     let mounted = true;
-
-    const handleMessage = (data) => {
-      if (!mounted) {
-        console.log('[WebSocketContext] Ignoring message after unmount:', data.type);
-        return;
-      }
-
-      console.log('[WebSocketContext] Handling message:', data.type);
-      console.log('[WebSocketContext] Full message data:', data);
-      addLog(`Received message: ${data.type}`);
-      addLog(`Message data: ${JSON.stringify(data)}`);
-
-      switch (data.type) {
-        case 'connected':
-          console.log('[WebSocketContext] WebSocket connected');
-          console.log('[WebSocketContext] Calling setConnected(true)');
-          setWsConnected(true);
-          addLog('WebSocket connected successfully');
-          addLog('Requesting device list...');
-          wsService.getDevices();
-          break;
-
-        case 'deviceDisconnected':
-          // The deviceId can be either in data.device.id or directly in data.deviceId
-          const disconnectedId = data.device?.id || data.deviceId;
-          console.log('[WebSocketContext] Device disconnected:', disconnectedId);
-          addLog(`Device disconnected: ${disconnectedId}`);
-          // Remove the disconnected device from the list
-          setConnectedDevices(prevDevices => {
-            const currentDevices = Array.isArray(prevDevices) ? prevDevices : [];
-            // Filter out the disconnected device
-            return currentDevices.filter(device => device.id !== disconnectedId);
-          });
-          break;
-
-        case 'deviceConnected':
-          console.log('[WebSocketContext] Device connected:', data.device?.id);
-          addLog(`Device connected: ${data.device?.id}`);
-          // Update connected devices immediately with the new device
-          setConnectedDevices(prevDevices => {
-            const currentDevices = Array.isArray(prevDevices) ? prevDevices : [];
-            const deviceIndex = currentDevices.findIndex(d => d.id === data.device.id);
-            
-            if (deviceIndex === -1) {
-              // Device not in list, add it
-              return [...currentDevices, data.device];
-            } else {
-              // Update existing device
-              const newDevices = [...currentDevices];
-              newDevices[deviceIndex] = { ...newDevices[deviceIndex], ...data.device, connected: true };
-              return newDevices;
-            }
-          });
-          // Request updated device list
-          wsService.getDevices();
-          break;
-
-        case 'devicesList':
-          console.log('[WebSocketContext] Received devices list:', data.devices?.length);
-          console.log('[WebSocketContext] Raw devices data:', JSON.stringify(data.devices));
-          if (data.devices && Array.isArray(data.devices)) {
-            addLog(`Received ${data.devices.length} devices`);
-            setConnectedDevices(prevDevices => {
-              const currentDevices = Array.isArray(prevDevices) ? prevDevices : [];
-              
-              // Always update the devices list with new data
-              console.log('[WebSocketContext] Updating devices list with new data');
-              
-              // Accept all devices from the bridge app as they are already filtered
-              // The bridge app now properly filters out disconnected devices
-              const updatedDevices = data.devices.map(device => {
-                // Log each device for debugging
-                console.log(`[WebSocketContext] Processing device ${device.id}:`, {
-                  connected: device.connected,
-                  name: device.name,
-                  serial: device.serial,
-                  firmware: device.firmware,
-                    batteryLevel: device.batteryLevel,
-                  color: device.color
-                });
-                // Do not override the connected property!
-                return device;
-              });
-              
-              console.log('[WebSocketContext] Updated devices:', updatedDevices);
-              return updatedDevices;
-            });
-          } else {
-            console.log('[WebSocketContext] Received invalid devices data:', data);
-          }
-          break;
-
-        case 'deviceInfo':
-          console.log('[WebSocketContext] Received device info:', data.deviceId);
-          if (data.deviceId) {
-            addLog(`Received device info for: ${data.deviceId}`);
-            setConnectedDevices(prevDevices => {
-              const currentDevices = Array.isArray(prevDevices) ? prevDevices : [];
-
-              const deviceIndex = currentDevices.findIndex(device => device.id === data.deviceId);
-              if (deviceIndex === -1) {
-                console.log('[WebSocketContext] Received deviceInfo for unknown device', data.deviceId);
-                return currentDevices;
-              }
-
-              const existingDevice = currentDevices[deviceIndex];
-              const infoChanged = 
-                existingDevice.serialNumber !== data.serialNumber ||
-                existingDevice.firmwareRevision !== data.firmwareRevision ||
-                existingDevice.hardwareRevision !== data.hardwareRevision ||
-                existingDevice.batteryLevel !== data.batteryLevel ||
-                existingDevice.connected !== data.connected ||
-                existingDevice.rssi !== data.rssi;
-
-              if (!infoChanged) {
-                console.log('[WebSocketContext] Device info unchanged, skipping state update for device', data.deviceId);
-                return currentDevices;
-              }
-
-              const newDevices = [...currentDevices];
-              newDevices[deviceIndex] = { ...existingDevice, ...data };
-              console.log('[WebSocketContext] Device info changed, preparing to update state for device', data.deviceId);
-              console.log('[WebSocketContext] Calling setConnectedDevices(...)');
-              return newDevices;
-            });
-          }
-          break;
-
-        case 'characteristicChanged':
-          console.log('[WebSocketContext] Characteristic changed:', {
-            deviceId: data.deviceId,
-            characteristicUUID: data.characteristicUUID,
-            value: data.value
-          });
-          if (data.deviceId && data.characteristicUUID) {
-            addLog(`Characteristic changed for device ${data.deviceId}: ${data.characteristicUUID} with value: ${JSON.stringify(data.value)}`);
-            
-            switch (data.characteristicUUID) {
-              case '000015251212efde1523785feabcd123':
-                const buttonState = data.value?.[0];
-                console.log('[WebSocketContext] Button status changed:', buttonState, 'for device:', data.deviceId);
-                addLog(`Button state changed: ${buttonState} for device: ${data.deviceId}`);
-
-                setDeviceValues(prevDeviceValues => {
-                  const currentDeviceValues = typeof prevDeviceValues === 'object' && prevDeviceValues !== null ? prevDeviceValues : {};
-                  const existingDeviceValues = currentDeviceValues[data.deviceId];
-
-                  if (existingDeviceValues?.buttonStatus === buttonState) {
-                    console.log('[WebSocketContext] Button status unchanged, skipping state update for device', data.deviceId);
-                    return prevDeviceValues;
-                  }
-
-                  console.log('[WebSocketContext] Button status changed, preparing to update state for device', data.deviceId);
-                  console.log('[WebSocketContext] Calling setDeviceValues(...)');
-                  return {
-                    ...currentDeviceValues,
-                    [data.deviceId]: {
-                      ...existingDeviceValues,
-                      buttonStatus: buttonState
-                    }
-                  };
-                });
-                break;
-
-              case '000015241212efde1523785feabcd123':
-                const pressValue = data.value?.[0];
-                console.log('[WebSocketContext] Press value changed:', pressValue, 'for device:', data.deviceId);
-                addLog(`Press value changed: ${pressValue} for device: ${data.deviceId}`);
-                
-                setDeviceValues(prevDeviceValues => {
-                  const currentDeviceValues = typeof prevDeviceValues === 'object' && prevDeviceValues !== null ? prevDeviceValues : {};
-                  const existingDeviceValues = currentDeviceValues[data.deviceId];
-
-                  if (existingDeviceValues?.pressValue === pressValue) {
-                    console.log('[WebSocketContext] Press value unchanged, skipping state update for device', data.deviceId);
-                    return prevDeviceValues;
-                  }
-
-                  console.log('[WebSocketContext] Press value changed, preparing to update state for device', data.deviceId);
-                  console.log('[WebSocketContext] Calling setDeviceValues(...)');
-                  return {
-                    ...currentDeviceValues,
-                    [data.deviceId]: {
-                      ...existingDeviceValues,
-                      pressValue: pressValue
-                    }
-                  };
-                });
-                break;
-
-              default:
-                console.log('[WebSocketContext] Unhandled characteristic UUID:', data.characteristicUUID);
-                addLog(`Unhandled characteristic UUID: ${data.characteristicUUID}`);
-                break;
-            }
-          }
-          break;
-
-        case 'buttonStateChanged':
-          console.log('[WebSocketContext] Button state changed event received:', {
-            deviceId: data.deviceId,
-            buttonState: data.buttonState,
-            pressValue: data.pressValue
-          });
-          addLog(`Button state changed for device ${data.deviceId}: state=${data.buttonState}, press=${data.pressValue}`);
-
-          setDeviceValues(prevDeviceValues => {
-            const currentDeviceValues = typeof prevDeviceValues === 'object' && prevDeviceValues !== null ? prevDeviceValues : {};
-            const existingDeviceValues = currentDeviceValues[data.deviceId];
-
-            console.log('[WebSocketContext] Button state changed event, updating state for device', data.deviceId, {
-              from: existingDeviceValues,
-              to: {
-                ...existingDeviceValues,
-                buttonState: data.buttonState,
-                pressValue: data.pressValue
-              }
-            });
-
-            return {
-              ...currentDeviceValues,
-              [data.deviceId]: {
-                ...existingDeviceValues,
-                buttonState: data.buttonState,
-                pressValue: data.pressValue
-              }
-            };
-          });
-          break;
-          
-        case 'error':
-          console.error('[WebSocketContext] Bridge error:', data.error);
-          addLog(`Bridge error: ${data.error || 'Unknown error occurred'}`);
-          break;
-
-        case 'devices':
-          console.log('Handling devices message:', data.devices);
-          if (Array.isArray(data.devices)) {
-            setConnectedDevices(data.devices);
-            // Update device values for each device
-            data.devices.forEach(device => {
-              setDeviceValues(prev => ({
-                ...prev,
-                [device.id]: {
-                  ...prev[device.id],
-                  connected: device.connected,
-                  batteryLevel: device.batteryLevel,
-                  color: device.color
-                }
-              }));
-            });
-          }
-          break;
-
-        default:
-          console.log('[WebSocketContext] Unhandled message type:', data.type);
-          addLog(`Unhandled message type: ${data.type}`);
-      }
-    };
 
     // Connect to WebSocket
     console.log('[WebSocketContext] Initiating WebSocket connection');

@@ -258,15 +258,50 @@ class WebSocketService {
 
   setColor(deviceId, r, g, b) {
     console.log('Setting color:', { deviceId, r, g, b });
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      let jsonToSend = {
-        type: 'setColor',
-        deviceId: deviceId,
-        data: [r, g, b]
-      };
-      this.ws.send(JSON.stringify(jsonToSend));
+    const sendColor = () => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        let jsonToSend = {
+          type: 'setColor',
+          deviceId: deviceId,
+          color: { r, g, b }
+        };
+        this.ws.send(JSON.stringify(jsonToSend));
+        return true;
+      }
+      return false;
+    };
+
+    // Try to send immediately if connected
+    if (sendColor()) {
+      return;
+    }
+
+    // If not connected, try to reconnect and send
+    if (!this.state.connecting) {
+      console.log('[WebSocketService] Not connected, attempting to reconnect...');
+      this.connect();
+      
+      // Wait for connection and retry
+      const checkConnection = setInterval(() => {
+        if (this.state.connected) {
+          clearInterval(checkConnection);
+          if (sendColor()) {
+            console.log('[WebSocketService] Successfully sent color after reconnection');
+          } else {
+            console.error('[WebSocketService] Failed to send color after reconnection');
+          }
+        }
+      }, 100);
+
+      // Clear interval after 5 seconds if still not connected
+      setTimeout(() => {
+        clearInterval(checkConnection);
+        if (!this.state.connected) {
+          console.error('[WebSocketService] Failed to reconnect within timeout');
+        }
+      }, 5000);
     } else {
-      console.error('WebSocket is not connected');
+      console.error('[WebSocketService] Already attempting to connect');
     }
   }
 
