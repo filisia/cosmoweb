@@ -81,11 +81,23 @@ export function WebSocketProvider({ children }) {
       case 'devices':
         console.log('[WebSocketContext] Handling devices message:', message.devices);
         setConnectedDevices(message.devices);
+        message.devices.forEach(device => {
+          setDeviceValues(prev => ({
+            ...prev,
+            [device.id]: {
+              ...prev[device.id],
+              buttonState: device.buttonState || 0,
+              pressValue: device.pressValue || 0,
+              connected: device.connected,
+              batteryLevel: device.batteryLevel,
+              color: device.color
+            }
+          }));
+        });
         break;
 
       case 'buttonStateChanged':
         console.log('[WebSocketContext] Button state changed:', message);
-        // Update the device's button state in the devices list
         setConnectedDevices(prevDevices => 
           prevDevices.map(device => 
             device.id === message.deviceId 
@@ -93,6 +105,14 @@ export function WebSocketProvider({ children }) {
               : device
           )
         );
+        setDeviceValues(prev => ({
+          ...prev,
+          [message.deviceId]: {
+            ...prev[message.deviceId],
+            buttonState: message.state,
+            pressValue: message.pressValue || 0
+          }
+        }));
         break;
 
       case 'error':
