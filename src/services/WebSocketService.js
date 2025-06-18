@@ -99,7 +99,11 @@ class WebSocketService {
 
         if (this.state.shouldReconnect && this.state.reconnectAttempts < this.maxReconnectAttempts) {
           this.state.reconnectAttempts++;
-          console.log(`[WebSocketService] Attempting to reconnect (${this.state.reconnectAttempts}/${this.maxReconnectAttempts})...`);
+          const delay = Math.min(1000 * Math.pow(2, this.state.reconnectAttempts - 1), 30000);
+          console.log(`[WebSocketService] Attempting to reconnect in ${delay}ms (${this.state.reconnectAttempts}/${this.maxReconnectAttempts})...`);
+          this.reconnectTimeout = setTimeout(() => {
+            this.connect();
+          }, delay);
         } else {
           console.log('[WebSocketService] Not attempting reconnect:', {
             shouldReconnect: this.state.shouldReconnect,
@@ -268,15 +272,50 @@ class WebSocketService {
 
   setMode(deviceId, mode) {
     console.log('Setting mode:', { deviceId, mode });
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      let jsonToSend = {
-        type: 'setMode',
-        deviceId: deviceId,
-        data: [mode]
-      };
-      this.ws.send(JSON.stringify(jsonToSend));
+    const sendMode = () => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        let jsonToSend = {
+          type: 'setMode',
+          deviceId: deviceId,
+          data: [mode]
+        };
+        this.ws.send(JSON.stringify(jsonToSend));
+        return true;
+      }
+      return false;
+    };
+
+    // Try to send immediately if connected
+    if (sendMode()) {
+      return;
+    }
+
+    // If not connected, try to reconnect and send
+    if (!this.state.connecting) {
+      console.log('[WebSocketService] Not connected, attempting to reconnect...');
+      this.connect();
+      
+      // Wait for connection and retry
+      const checkConnection = setInterval(() => {
+        if (this.state.connected) {
+          clearInterval(checkConnection);
+          if (sendMode()) {
+            console.log('[WebSocketService] Successfully sent mode after reconnection');
+          } else {
+            console.error('[WebSocketService] Failed to send mode after reconnection');
+          }
+        }
+      }, 100);
+
+      // Clear interval after 5 seconds if still not connected
+      setTimeout(() => {
+        clearInterval(checkConnection);
+        if (!this.state.connected) {
+          console.error('[WebSocketService] Failed to reconnect within timeout');
+        }
+      }, 5000);
     } else {
-      console.error('WebSocket is not connected');
+      console.error('[WebSocketService] Already attempting to connect');
     }
   }
 
