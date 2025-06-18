@@ -88,19 +88,23 @@ wss.on('connection', (ws) => {
         case 'deviceConnected':
         case 'deviceUpdate':
           console.log('Handling device update:', data);
-          if (data.deviceId) {
-            const existingDevice = devices.get(data.deviceId);
+          if (data.data?.id) {
+            const deviceId = data.data.id;
+            const existingDevice = devices.get(deviceId);
             const updatedDevice = {
               ...existingDevice,
-              id: data.deviceId,
-              name: data.name || existingDevice?.name,
-              connected: data.connected !== undefined ? data.connected : true,
+              id: deviceId,
+              name: data.data.name || existingDevice?.name,
+              connected: data.data.connected !== undefined ? data.data.connected : true,
               color: existingDevice?.color || '#000000',
-              batteryLevel: data.batteryLevel || existingDevice?.batteryLevel,
-              serialNumber: data.serialNumber || existingDevice?.serialNumber,
-              firmwareVersion: data.firmwareVersion || existingDevice?.firmwareVersion
+              batteryLevel: data.data.batteryLevel || existingDevice?.batteryLevel,
+              serialNumber: data.data.serial || existingDevice?.serialNumber,
+              firmwareVersion: data.data.firmware || existingDevice?.firmwareVersion,
+              manufacturer: data.data.manufacturer || existingDevice?.manufacturer,
+              rssi: data.data.rssi || existingDevice?.rssi,
+              lastSeen: data.data.lastSeen || existingDevice?.lastSeen
             };
-            devices.set(data.deviceId, updatedDevice);
+            devices.set(deviceId, updatedDevice);
             console.log('Current devices after update:', Array.from(devices.values()));
             broadcastToAll({
               type: 'devices',

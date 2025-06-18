@@ -1,7 +1,7 @@
 // BLEService.js
 
 let ws = null;
-const WS_URL = 'ws://localhost:8080'; 
+const WS_URL = 'wss://cosmoweb-server.onrender.com'; 
 
 // Initialize WebSocket connection
 const initializeWebSocket = () => {
@@ -10,7 +10,7 @@ const initializeWebSocket = () => {
   ws = new WebSocket(WS_URL);
   
   ws.onopen = () => {
-    console.log('WebSocket connected to Electron app');
+    console.log('WebSocket connected to Render server');
   };
 
   ws.onclose = () => {
