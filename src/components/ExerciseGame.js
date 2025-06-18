@@ -24,10 +24,77 @@ export default function ExerciseGame() {
   const [score, setScore] = useState(0);
   const [feedback, setFeedback] = useState(null); // 'correct' or 'incorrect'
   const { connectedDevices, deviceValues } = useWebSocket();
-  const intervalRef = useRef();
+  const intervalRef = useRef(null);
   const cosmosToUse = useMemo(() => connectedDevices.slice(0, numCosmos), [connectedDevices, numCosmos]);
   const lastPressRef = useRef({});
   const isUnmountingRef = useRef(false);
+
+  // Get the active device from cosmosToUse array
+  const activeDevice = useMemo(() => {
+    if (!cosmosToUse.length) return null;
+    return cosmosToUse[activeIndex];
+  }, [cosmosToUse, activeIndex]);
+
+  // Handle button press for the active device
+  const handleButtonPress = useCallback((deviceId) => {
+    if (!activeDevice || deviceId !== activeDevice.id) {
+      console.log('Wrong button pressed!');
+      setFeedback('incorrect');
+      setTimeout(() => {
+        setFeedback(null);
+      }, 500);
+      return;
+    }
+
+    console.log('Correct button pressed!');
+    setFeedback('correct');
+    setScore(s => s + 1);
+    setTimeout(() => {
+      setFeedback(null);
+      setActiveIndex(i => (i + 1) % cosmosToUse.length);
+    }, 500);
+  }, [activeDevice, cosmosToUse.length]);
+
+  const checkButtonStates = useCallback(() => {
+    console.log('Checking button states:', {
+      activeDevice,
+      deviceValues,
+      lastPressRef
+    });
+
+    if (!activeDevice || !deviceValues[activeDevice.id]) {
+      console.log('No active device or device values');
+      return;
+    }
+
+    const deviceValue = deviceValues[activeDevice.id];
+    console.log(`Device ${activeDevice.id} button state:`, deviceValue.buttonState);
+    console.log(`Device ${activeDevice.id} press value:`, deviceValue.pressValue);
+
+    // Check if button is pressed (buttonState === 1)
+    if (deviceValue.buttonState === 1) {
+      const now = Date.now();
+      // Only trigger if we haven't seen a press in the last 500ms
+      if (!lastPressRef.current[activeDevice.id] || now - lastPressRef.current[activeDevice.id] > 500) {
+        console.log(`Button press detected for device ${activeDevice.id}`);
+        lastPressRef.current[activeDevice.id] = now;
+        handleButtonPress(activeDevice.id);
+      }
+    }
+  }, [activeDevice, deviceValues, handleButtonPress]);
+
+  // Listen for button press on all Cosmos, but only react if it's the active one
+  useEffect(() => {
+    if (gameOver) return;
+
+    const interval = setInterval(() => {
+      if (!activeDevice) return;
+      checkButtonStates();
+    }, 100);
+
+    intervalRef.current = interval;
+    return () => clearInterval(interval);
+  }, [gameOver, checkButtonStates, activeDevice]);
 
   // Cleanup: turn off all devices only when component unmounts
   useEffect(() => {
@@ -63,44 +130,6 @@ export default function ExerciseGame() {
     }, 1000);
     return () => clearInterval(intervalRef.current);
   }, [gameOver]);
-
-  const checkButtonStates = useCallback(() => {
-    console.log('Checking button states:', {
-      activeDevice,
-      deviceValues,
-      lastPressRef
-    });
-
-    if (!activeDevice || !deviceValues[activeDevice]) {
-      console.log('No active device or device values');
-      return;
-    }
-
-    const deviceValue = deviceValues[activeDevice];
-    console.log(`Device ${activeDevice} button state:`, deviceValue.buttonState);
-    console.log(`Device ${activeDevice} press value:`, deviceValue.pressValue);
-
-    // Check if button is pressed (buttonState === 1)
-    if (deviceValue.buttonState === 1) {
-      const now = Date.now();
-      // Only trigger if we haven't seen a press in the last 500ms
-      if (!lastPressRef.current[activeDevice] || now - lastPressRef.current[activeDevice] > 500) {
-        console.log(`Button press detected for device ${activeDevice}`);
-        lastPressRef.current[activeDevice] = now;
-        handleButtonPress(activeDevice);
-      }
-    }
-  }, [activeDevice, deviceValues, handleButtonPress]);
-
-  // Listen for button press on all Cosmos, but only react if it's the active one
-  useEffect(() => {
-    if (gameOver) return;
-    if (!cosmosToUse.length) return;
-    const activeDevice = cosmosToUse[activeIndex];
-    if (!activeDevice) return;
-
-    checkButtonStates();
-  }, [gameOver, cosmosToUse, activeIndex, checkButtonStates]);
 
   if (gameOver) {
     return (
