@@ -1,19 +1,18 @@
 const WebSocket = require('ws');
 const http = require('http');
 
-// Force using Render's PORT
-if (!process.env.PORT) {
-  console.error('PORT environment variable is not set!');
-  process.exit(1);
-}
-
 // Log environment variables
 console.log('Environment variables:', {
   PORT: process.env.PORT,
   NODE_ENV: process.env.NODE_ENV,
   RENDER: process.env.RENDER,
-  RENDER_EXTERNAL_URL: process.env.RENDER_EXTERNAL_URL
+  RENDER_EXTERNAL_URL: process.env.RENDER_EXTERNAL_URL,
+  RENDER_PORT: process.env.RENDER_PORT
 });
+
+// Use Render's PORT or fallback to 10000
+const PORT = process.env.PORT || 10000;
+console.log(`Using port: ${PORT}`);
 
 const server = http.createServer();
 
@@ -149,9 +148,9 @@ wss.on('connection', (ws) => {
   });
 });
 
-// Use the PORT environment variable provided by Render
-const PORT = process.env.PORT;
+// Start the server
 console.log(`Starting server on port ${PORT}`);
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`WebSocket server is running on port ${PORT}`);
+  console.log(`Server is ready to accept connections`);
 });
