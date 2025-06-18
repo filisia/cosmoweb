@@ -171,8 +171,8 @@ function HomePage({ colors }) {
             ) : (
               connectedDevices.map((device) => (
                 <tr key={device.id}>
-                  <td>{device.serial || 'N/A'}</td>
-                  <td>{device.firmware || 'N/A'}</td>
+                  <td>{device.serialNumber || 'N/A'}</td>
+                  <td>{device.firmwareVersion || 'N/A'}</td>
                   <td>{device.batteryLevel ? `${device.batteryLevel}%` : 'N/A'}</td>
                   <td>
                     <span className={getStatusClass(device)}>
