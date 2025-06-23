@@ -129,8 +129,8 @@ class WebSocketService {
           console.log('[WebSocketService] Received message:', data);
           console.log('[WebSocketService] Raw message data:', event.data);
           
-          if (data.type === 'devicesList') {
-            console.log('[WebSocketService] Received devicesList with', data.devices?.length, 'devices');
+          if (data.type === 'devices') {
+            console.log('[WebSocketService] Received devices with', data.devices?.length, 'devices');
             // Transform the devices data to show 'Available' instead of 'Connected' when connected is false
             const transformedDevices = data.devices?.map(device => ({
               ...device,

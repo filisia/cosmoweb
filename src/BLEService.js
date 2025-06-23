@@ -1,7 +1,10 @@
 // BLEService.js
 
+// This file is now deprecated - WebSocket communication is handled by WebSocketService
+// Keeping this file for backward compatibility but it's no longer used
+
 let ws = null;
-const WS_URL = 'wss://cosmoweb-server.onrender.com'; 
+const WS_URL = 'ws://localhost:8080'; // Updated to use local bridge
 
 // Initialize WebSocket connection
 const initializeWebSocket = () => {
@@ -10,7 +13,7 @@ const initializeWebSocket = () => {
   ws = new WebSocket(WS_URL);
   
   ws.onopen = () => {
-    console.log('WebSocket connected to Render server');
+    console.log('WebSocket connected to local bridge server');
   };
 
   ws.onclose = () => {
