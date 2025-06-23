@@ -69,8 +69,6 @@ export function WebSocketProvider({ children }) {
       case 'connected':
         setWsConnected(true);
         console.log('[WebSocketContext] WebSocket connected');
-        console.log('[WebSocketContext] Requesting device list...');
-        wsService.getDevices();
         break;
 
       case 'disconnected':
