@@ -28,6 +28,7 @@ export default function ExerciseGame() {
   const cosmosToUse = useMemo(() => connectedDevices.slice(0, numCosmos), [connectedDevices, numCosmos]);
   const lastPressRef = useRef({});
   const isUnmountingRef = useRef(false);
+  const previousButtonStates = useRef({});
 
   // Get the active device from cosmosToUse array
   const activeDevice = useMemo(() => {
@@ -56,23 +57,25 @@ export default function ExerciseGame() {
   }, [activeDevice, cosmosToUse.length]);
 
   const checkButtonStates = useCallback(() => {
-    console.log('Checking button states:', {
-      activeDevice,
-      deviceValues,
-      lastPressRef
-    });
-
     if (!activeDevice || !deviceValues[activeDevice.id]) {
-      console.log('No active device or device values');
       return;
     }
 
     const deviceValue = deviceValues[activeDevice.id];
-    console.log(`Device ${activeDevice.id} button state:`, deviceValue.buttonState);
-    console.log(`Device ${activeDevice.id} press value:`, deviceValue.pressValue);
+    const currentButtonState = deviceValue.buttonState;
+    const previousButtonState = previousButtonStates.current[activeDevice.id];
+    
+    // Only log when there's an actual state change
+    if (currentButtonState !== previousButtonState) {
+      console.log(`Device ${activeDevice.id} button state changed: ${previousButtonState} -> ${currentButtonState}`);
+      console.log(`Device ${activeDevice.id} press value:`, deviceValue.pressValue);
+    }
 
-    // Check if button is pressed (buttonState === 1)
-    if (deviceValue.buttonState === 1) {
+    // Check if button just changed from released to pressed (state change from 0/false to 1/true)
+    const wasReleased = !previousButtonState || previousButtonState === 0;
+    const isPressed = currentButtonState === 1;
+    
+    if (wasReleased && isPressed) {
       const now = Date.now();
       // Only trigger if we haven't seen a press in the last 500ms
       if (!lastPressRef.current[activeDevice.id] || now - lastPressRef.current[activeDevice.id] > 500) {
@@ -81,6 +84,9 @@ export default function ExerciseGame() {
         handleButtonPress(activeDevice.id);
       }
     }
+    
+    // Update the previous state
+    previousButtonStates.current[activeDevice.id] = currentButtonState;
   }, [activeDevice, deviceValues, handleButtonPress]);
 
   // Listen for button press on all Cosmos, but only react if it's the active one
@@ -90,7 +96,7 @@ export default function ExerciseGame() {
     const interval = setInterval(() => {
       if (!activeDevice) return;
       checkButtonStates();
-    }, 100);
+    }, 250);
 
     intervalRef.current = interval;
     return () => clearInterval(interval);
@@ -134,6 +140,17 @@ export default function ExerciseGame() {
   // Add debug logging for device values changes
   useEffect(() => {
     console.log('[ExerciseGame] Device values updated:', deviceValues);
+    // Log detailed button state information for debugging
+    Object.entries(deviceValues).forEach(([deviceId, values]) => {
+      if (values && values.buttonState !== undefined) {
+        console.log(`[ExerciseGame] Device ${deviceId} button state:`, {
+          buttonState: values.buttonState,
+          buttonStateType: typeof values.buttonState,
+          pressValue: values.pressValue,
+          pressValueType: typeof values.pressValue
+        });
+      }
+    });
   }, [deviceValues]);
 
   if (gameOver) {

@@ -80,11 +80,22 @@ export function WebSocketProvider({ children }) {
         console.log('[WebSocketContext] Handling devices message:', message.devices);
         setConnectedDevices(message.devices);
         message.devices.forEach(device => {
+          // Convert string button states to numeric values for consistency
+          let buttonStateValue = 0;
+          if (device.buttonState !== undefined) {
+            const state = device.buttonState;
+            if (state === 1 || state === true || state === 'pressed') {
+              buttonStateValue = 1;
+            } else if (state === 0 || state === false || state === 'released') {
+              buttonStateValue = 0;
+            }
+          }
+          
           setDeviceValues(prev => ({
             ...prev,
             [device.id]: {
               ...prev[device.id],
-              buttonState: device.buttonState || 0,
+              buttonState: buttonStateValue,
               pressValue: device.pressValue || 0,
               connected: device.connected,
               batteryLevel: device.batteryLevel,
@@ -92,18 +103,6 @@ export function WebSocketProvider({ children }) {
             }
           }));
         });
-        break;
-
-      case 'buttonStateChanged':
-        console.log('[WebSocketContext] Button state changed:', message);
-        setDeviceValues(prev => ({
-          ...prev,
-          [message.deviceId]: {
-            ...prev[message.deviceId],
-            buttonState: message.buttonState || message.state || 0,
-            pressValue: message.pressValue || 0
-          }
-        }));
         break;
 
       case 'buttonPress':
@@ -125,6 +124,29 @@ export function WebSocketProvider({ children }) {
           [message.deviceId]: {
             ...prev[message.deviceId],
             buttonState: 0,
+            pressValue: message.pressValue || 0
+          }
+        }));
+        break;
+
+      case 'buttonStateChanged':
+        console.log('[WebSocketContext] Button state changed:', message);
+        // Convert string button states to numeric values for consistency
+        let buttonStateValue = 0;
+        if (message.buttonState || message.state) {
+          const state = message.buttonState || message.state;
+          if (state === 1 || state === true || state === 'pressed') {
+            buttonStateValue = 1;
+          } else if (state === 0 || state === false || state === 'released') {
+            buttonStateValue = 0;
+          }
+        }
+        
+        setDeviceValues(prev => ({
+          ...prev,
+          [message.deviceId]: {
+            ...prev[message.deviceId],
+            buttonState: buttonStateValue,
             pressValue: message.pressValue || 0
           }
         }));
