@@ -131,6 +131,11 @@ export default function ExerciseGame() {
     return () => clearInterval(intervalRef.current);
   }, [gameOver]);
 
+  // Add debug logging for device values changes
+  useEffect(() => {
+    console.log('[ExerciseGame] Device values updated:', deviceValues);
+  }, [deviceValues]);
+
   if (gameOver) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-r from-blue-200 to-purple-200">

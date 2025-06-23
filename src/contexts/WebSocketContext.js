@@ -96,18 +96,35 @@ export function WebSocketProvider({ children }) {
 
       case 'buttonStateChanged':
         console.log('[WebSocketContext] Button state changed:', message);
-        setConnectedDevices(prevDevices => 
-          prevDevices.map(device => 
-            device.id === message.deviceId 
-              ? { ...device, buttonState: message.state }
-              : device
-          )
-        );
         setDeviceValues(prev => ({
           ...prev,
           [message.deviceId]: {
             ...prev[message.deviceId],
-            buttonState: message.state,
+            buttonState: message.buttonState || message.state || 0,
+            pressValue: message.pressValue || 0
+          }
+        }));
+        break;
+
+      case 'buttonPress':
+        console.log('[WebSocketContext] Button press detected:', message);
+        setDeviceValues(prev => ({
+          ...prev,
+          [message.deviceId]: {
+            ...prev[message.deviceId],
+            buttonState: 1,
+            pressValue: message.pressValue || 0
+          }
+        }));
+        break;
+
+      case 'buttonRelease':
+        console.log('[WebSocketContext] Button release detected:', message);
+        setDeviceValues(prev => ({
+          ...prev,
+          [message.deviceId]: {
+            ...prev[message.deviceId],
+            buttonState: 0,
             pressValue: message.pressValue || 0
           }
         }));
