@@ -12,10 +12,6 @@ export default function ExerciseSettings() {
     navigate('/exercise', { state: { numCosmos, duration } });
   };
 
-  const handleBack = () => {
-    navigate(-1);
-  };
-
   const handleHelp = () => {
     alert('Help coming soon!');
   };
@@ -24,7 +20,6 @@ export default function ExerciseSettings() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-purple-50 py-8">
       <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-xl">
         <div className="flex items-center mb-4">
-          <button onClick={handleBack} className="text-gray-600 font-semibold text-lg mr-4 px-2 py-1 hover:bg-gray-100 rounded">&lt; BACK</button>
           <h1 className="text-3xl font-bold tracking-wide text-gray-800">EXERCISE</h1>
         </div>
         <div className="text-gray-700 text-lg mb-2">

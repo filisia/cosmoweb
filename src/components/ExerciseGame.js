@@ -4,14 +4,14 @@ import { useWebSocket } from '../contexts/WebSocketContext';
 import wsService from '../services/WebSocketService';
 
 const colorMap = [
-  { name: 'blue', rgb: [0, 1, 4] },
-  { name: 'green', rgb: [1, 4, 2] },
-  { name: 'yellow', rgb: [4, 4, 0] },
-  { name: 'orange', rgb: [4, 3, 0] },
-  { name: 'red', rgb: [4, 1, 2] },
-  { name: 'purple', rgb: [4, 1, 4] },
-  { name: 'darkYellow', rgb: [3, 3, 0] },
-  { name: 'purple2', rgb: [2, 0, 3] },
+  { name: 'blue', rgb: [0, 1, 4], tailwind: 'bg-blue-500 border-blue-500' },
+  { name: 'green', rgb: [1, 4, 2], tailwind: 'border-green-400' },
+  { name: 'yellow', rgb: [4, 4, 0], tailwind: 'border-yellow-400' },
+  { name: 'orange', rgb: [4, 3, 0], tailwind: 'border-orange-400' },
+  { name: 'red', rgb: [4, 1, 2], tailwind: 'border-red-400' },
+  { name: 'purple', rgb: [4, 1, 4], tailwind: 'border-purple-400' },
+  { name: 'darkYellow', rgb: [3, 3, 0], tailwind: 'border-yellow-600' },
+  { name: 'purple2', rgb: [2, 0, 3], tailwind: 'border-purple-700' },
 ];
 
 export default function ExerciseGame() {
@@ -39,93 +39,66 @@ export default function ExerciseGame() {
   // Handle button press for the active device
   const handleButtonPress = useCallback((deviceId) => {
     if (!activeDevice || deviceId !== activeDevice.id) {
-      console.log('Wrong button pressed!');
       setFeedback('incorrect');
-      setTimeout(() => {
-        setFeedback(null);
-      }, 500);
+      setTimeout(() => setFeedback(null), 300);
       return;
     }
-
-    console.log('Correct button pressed!');
     setFeedback('correct');
     setScore(s => s + 1);
     setTimeout(() => {
       setFeedback(null);
       setActiveIndex(i => (i + 1) % cosmosToUse.length);
-    }, 500);
+    }, 300);
   }, [activeDevice, cosmosToUse.length]);
 
   const checkButtonStates = useCallback(() => {
     if (!activeDevice || !deviceValues[activeDevice.id]) {
       return;
     }
-
     const deviceValue = deviceValues[activeDevice.id];
     const currentButtonState = deviceValue.buttonState;
     const previousButtonState = previousButtonStates.current[activeDevice.id];
-    
-    // Only log when there's an actual state change
-    if (currentButtonState !== previousButtonState) {
-      console.log(`Device ${activeDevice.id} button state changed: ${previousButtonState} -> ${currentButtonState}`);
-      console.log(`Device ${activeDevice.id} press value:`, deviceValue.pressValue);
-    }
-
-    // Check if button just changed from released to pressed (state change from 0/false to 1/true)
     const wasReleased = !previousButtonState || previousButtonState === 0;
     const isPressed = currentButtonState === 1;
-    
     if (wasReleased && isPressed) {
       const now = Date.now();
-      // Only trigger if we haven't seen a press in the last 500ms
       if (!lastPressRef.current[activeDevice.id] || now - lastPressRef.current[activeDevice.id] > 500) {
-        console.log(`Button press detected for device ${activeDevice.id}`);
         lastPressRef.current[activeDevice.id] = now;
-        wsService.setLuminosity(activeDevice.id, 0); // Set luminosity to 0 on press
+        wsService.setLuminosity(activeDevice.id, 0);
         handleButtonPress(activeDevice.id);
       }
     }
-    
-    // Check if button just changed from pressed to released
     const wasPressed = previousButtonState === 1;
     const isReleased = !isPressed;
-    
     if (wasPressed && isReleased) {
-      console.log(`Button release detected for device ${activeDevice.id}`);
-      wsService.setLuminosity(activeDevice.id, 64); // Set luminosity back to max on release
+      wsService.setLuminosity(activeDevice.id, 64);
     }
-    
-    // Update the previous state
     previousButtonStates.current[activeDevice.id] = currentButtonState;
   }, [activeDevice, deviceValues, handleButtonPress]);
 
-  // Listen for button press on all Cosmos, but only react if it's the active one
   useEffect(() => {
     if (gameOver) return;
-
     const interval = setInterval(() => {
       if (!activeDevice) return;
       checkButtonStates();
     }, 250);
-
     intervalRef.current = interval;
     return () => clearInterval(interval);
   }, [gameOver, checkButtonStates, activeDevice]);
 
-  // Cleanup: turn off all devices only when component unmounts
   useEffect(() => {
     return () => {
       if (!isUnmountingRef.current) {
         isUnmountingRef.current = true;
         cosmosToUse.forEach((device, idx) => {
-          wsService.setMode(device.id, 4); // Set to Button Inverted mode
+          wsService.setMode(device.id, 4);
           const [r, g, b] = colorMap[idx % colorMap.length].rgb;
           wsService.setColor(device.id, r, g, b);
-          wsService.setLuminosity(device.id, 64); // Set luminosity to max
+          wsService.setLuminosity(device.id, 64);
         });
       }
     };
-  }, []); // Empty dependency array means this only runs on mount/unmount
+  }, []);
 
   useEffect(() => {
     if (!numCosmos || !duration) {
@@ -148,43 +121,26 @@ export default function ExerciseGame() {
     return () => clearInterval(intervalRef.current);
   }, [gameOver]);
 
-  // Add debug logging for device values changes
-  useEffect(() => {
-    console.log('[ExerciseGame] Device values updated:', deviceValues);
-    // Log detailed button state information for debugging
-    Object.entries(deviceValues).forEach(([deviceId, values]) => {
-      if (values && values.buttonState !== undefined) {
-        console.log(`[ExerciseGame] Device ${deviceId} button state:`, {
-          buttonState: values.buttonState,
-          buttonStateType: typeof values.buttonState,
-          pressValue: values.pressValue,
-          pressValueType: typeof values.pressValue
-        });
-      }
-    });
-  }, [deviceValues]);
-
-  // Set initial luminosity to max for all devices when they become available
   useEffect(() => {
     if (cosmosToUse.length > 0) {
       cosmosToUse.forEach((device, idx) => {
-        wsService.setLuminosity(device.id, 64); // Set luminosity to max
-        console.log(`[ExerciseGame] Set initial luminosity to max for device ${device.id}`);
+        wsService.setLuminosity(device.id, 64);
       });
     }
   }, [cosmosToUse]);
 
+  // --- UI ---
   if (gameOver) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-r from-blue-200 to-purple-200">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-white">
         <div className="bg-white p-8 rounded shadow-md w-full max-w-md text-center">
           <h1 className="text-3xl font-bold mb-4">Game Over!</h1>
           <p className="text-xl mb-2">Score: {score}</p>
           <button
             onClick={() => navigate('/exercise-settings')}
-            className="mt-4 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 font-semibold"
+            className="mt-4 bg-purple-600 text-white py-2 px-4 rounded-full hover:bg-purple-700 font-semibold"
           >
-            Play Again
+            Back to Settings
           </button>
         </div>
       </div>
@@ -192,41 +148,62 @@ export default function ExerciseGame() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-r from-blue-200 to-purple-200">
-      <div className="mb-6 text-center">
-        <h1 className="text-3xl font-bold mb-2">Exercise Game</h1>
-        <p className="text-lg">Time Left: {timeLeft}s</p>
-        <p className="text-lg">Score: {score}</p>
-        {feedback && (
-          <p className={`text-xl font-bold mt-2 ${
-            feedback === 'correct' ? 'text-green-600' : 'text-red-600'
-          }`}>
-            {feedback === 'correct' ? '✓ Correct!' : '✗ Wrong button!'}
-          </p>
-        )}
+    <div className="min-h-screen flex flex-col bg-white">
+      {/* Top Bar */}
+      <div className="flex items-center justify-between px-6 pt-4 pb-2">
+        <button
+          onClick={() => navigate('/exercise-settings')}
+          className="rounded-full border-2 border-purple-400 text-purple-600 p-2 hover:bg-purple-50 transition"
+          aria-label="Back"
+        >
+          <svg width="28" height="28" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <div className="flex-1 flex flex-col items-center">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xl">⏳</span>
+            <span className="text-lg font-semibold">{String(Math.floor(timeLeft/60)).padStart(2,'0')}:{String(timeLeft%60).padStart(2,'0')}</span>
+          </div>
+          <div className="mt-1">
+            <span className="inline-flex items-center px-4 py-1 rounded-full bg-purple-100 text-purple-700 font-semibold text-base">
+              <span className="mr-2 text-xl">🎵</span> Brass Beat
+            </span>
+          </div>
+        </div>
+        <button
+          onClick={() => navigate('/exercise-settings')}
+          className="rounded-full border-2 border-gray-300 text-gray-600 p-2 hover:bg-gray-100 transition ml-2"
+          aria-label="End Game"
+        >
+          <svg width="28" height="28" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/><rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor"/></svg>
+        </button>
       </div>
-      <div className="flex flex-wrap justify-center gap-6">
-        {cosmosToUse.map((device, idx) => (
-          <div
-            key={device.id}
-            className={`circle circle-${colorMap[idx % colorMap.length].name} ${
-              idx === activeIndex ? 'circle-active animate-pulse' : 'opacity-50'
-            } ${
-              feedback === 'correct' && idx === activeIndex ? 'ring-4 ring-green-500' :
-              feedback === 'incorrect' && idx === activeIndex ? 'ring-4 ring-red-500' : ''
-            }`}
-            style={{ 
-              width: idx === activeIndex ? 100 : 80, 
-              height: idx === activeIndex ? 100 : 80, 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              fontSize: idx === activeIndex ? 32 : 24,
-              transform: idx === activeIndex ? 'scale(1.1)' : 'scale(1)',
-              transition: 'all 0.2s ease-in-out'
-            }}
-          />
-        ))}
+      {/* Game Area */}
+      <div className="flex-1 flex flex-col items-center justify-center">
+        <div className="flex flex-row items-center justify-center gap-12 mt-8">
+          {cosmosToUse.map((device, idx) => {
+            const isActive = idx === activeIndex;
+            const colorClass = colorMap[idx % colorMap.length].tailwind;
+            return (
+              <div
+                key={device.id}
+                className={`flex items-center justify-center rounded-full border-4 ${isActive ? colorClass : colorClass.replace('bg-', 'border-')} ${isActive ? colorClass : ''} ${isActive ? '' : 'bg-white'} transition-all duration-200`}
+                style={{
+                  width: 180,
+                  height: 180,
+                  backgroundColor: isActive ? '' : '#fff',
+                  boxShadow: isActive ? '0 0 0 4px #e0e7ff' : 'none',
+                  borderColor: isActive ? undefined : colorClass.split(' ')[1]?.replace('bg-', '').replace('border-', '#'),
+                }}
+              >
+                {isActive && <div className="w-full h-full rounded-full" style={{ background: colorClass.includes('bg-') ? undefined : undefined }} />}
+              </div>
+            );
+          })}
+        </div>
+        {/* Minimal feedback: border flash */}
+        {feedback && (
+          <div className={`absolute top-0 left-0 w-full h-full pointer-events-none z-50 ${feedback === 'correct' ? 'ring-4 ring-green-400' : 'ring-4 ring-red-400'}`}></div>
+        )}
       </div>
     </div>
   );
