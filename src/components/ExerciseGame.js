@@ -4,12 +4,12 @@ import { useWebSocket } from '../contexts/WebSocketContext';
 import wsService from '../services/WebSocketService';
 
 const colorMap = [
-  { name: 'blue', rgb: [0, 0, 4], tailwind: 'bg-blue-500 border-blue-500' },
-  { name: 'green', rgb: [0, 4, 0], tailwind: 'border-green-400' },
-  { name: 'yellow', rgb: [4, 3, 0], tailwind: 'border-yellow-400' },
-  { name: 'orange', rgb: [4, 1, 0], tailwind: 'border-orange-400' },
-  { name: 'red', rgb: [4, 0, 0], tailwind: 'border-red-400' },
-  { name: 'purple', rgb: [4, 0, 4], tailwind: 'border-purple-400' },
+  { name: 'blue', rgb: [0, 0, 4], tailwind: 'border-blue-500', bgTailwind: 'bg-blue-500' },
+  { name: 'green', rgb: [0, 4, 0], tailwind: 'border-green-400', bgTailwind: 'bg-green-400' },
+  { name: 'yellow', rgb: [4, 3, 0], tailwind: 'border-yellow-400', bgTailwind: 'bg-yellow-400' },
+  { name: 'orange', rgb: [4, 1, 0], tailwind: 'border-orange-400', bgTailwind: 'bg-orange-400' },
+  { name: 'red', rgb: [4, 0, 0], tailwind: 'border-red-400', bgTailwind: 'bg-red-400' },
+  { name: 'purple', rgb: [4, 0, 4], tailwind: 'border-purple-400', bgTailwind: 'bg-purple-400' },
 ];
 
 export default function ExerciseGame() {
@@ -37,16 +37,11 @@ export default function ExerciseGame() {
   // Handle button press for the active device
   const handleButtonPress = useCallback((deviceId) => {
     if (!activeDevice || deviceId !== activeDevice.id) {
-      setFeedback('incorrect');
-      setTimeout(() => setFeedback(null), 300);
+      // Remove feedback for incorrect presses
       return;
     }
-    setFeedback('correct');
     setScore(s => s + 1);
-    setTimeout(() => {
-      setFeedback(null);
-      setActiveIndex(i => (i + 1) % cosmosToUse.length);
-    }, 300);
+    setActiveIndex(i => (i + 1) % cosmosToUse.length);
   }, [activeDevice, cosmosToUse.length]);
 
   const checkButtonStates = useCallback(() => {
@@ -166,6 +161,11 @@ export default function ExerciseGame() {
               <span className="mr-2 text-xl">🎵</span> Brass Beat
             </span>
           </div>
+          <div className="mt-2">
+            <span className="inline-flex items-center px-4 py-1 rounded-full bg-green-100 text-green-700 font-semibold text-base">
+              <span className="mr-2 text-xl">🏆</span> Score: {score}
+            </span>
+          </div>
         </div>
         <button
           onClick={() => navigate('/exercise-settings')}
@@ -180,28 +180,34 @@ export default function ExerciseGame() {
         <div className="flex flex-row items-center justify-center gap-12 mt-8">
           {cosmosToUse.map((device, idx) => {
             const isActive = idx === activeIndex;
-            const colorClass = colorMap[idx % colorMap.length].tailwind;
+            const colorInfo = colorMap[idx % colorMap.length];
             return (
               <div
                 key={device.id}
-                className={`flex items-center justify-center rounded-full border-4 ${isActive ? colorClass : colorClass.replace('bg-', 'border-')} ${isActive ? colorClass : ''} ${isActive ? '' : 'bg-white'} transition-all duration-200`}
+                className={`flex items-center justify-center rounded-full border-4 transition-all duration-200 ${
+                  isActive 
+                    ? `${colorInfo.bgTailwind} border-white` 
+                    : `${colorInfo.tailwind} bg-white`
+                }`}
                 style={{
                   width: 180,
                   height: 180,
-                  backgroundColor: isActive ? '' : '#fff',
-                  boxShadow: isActive ? '0 0 0 4px #e0e7ff' : 'none',
-                  borderColor: isActive ? undefined : colorClass.split(' ')[1]?.replace('bg-', '').replace('border-', '#'),
+                  boxShadow: isActive ? '0 0 20px rgba(0, 0, 0, 0.3)' : 'none',
                 }}
               >
-                {isActive && <div className="w-full h-full rounded-full" style={{ background: colorClass.includes('bg-') ? undefined : undefined }} />}
+                {/* Optional: Add a subtle inner glow for active circles */}
+                {isActive && (
+                  <div 
+                    className="w-full h-full rounded-full opacity-20"
+                    style={{ 
+                      background: 'radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%)'
+                    }} 
+                  />
+                )}
               </div>
             );
           })}
         </div>
-        {/* Minimal feedback: border flash */}
-        {feedback && (
-          <div className={`absolute top-0 left-0 w-full h-full pointer-events-none z-50 ${feedback === 'correct' ? 'ring-4 ring-green-400' : 'ring-4 ring-red-400'}`}></div>
-        )}
       </div>
     </div>
   );
