@@ -1,75 +1,83 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWebSocket } from '../contexts/WebSocketContext';
-import wsService from '../services/WebSocketService';
-
-const durations = [
-  { label: '30 seconds', value: 30 },
-  { label: '1 minute', value: 60 },
-  { label: '2 minutes', value: 120 },
-];
-
-const colorMap = [
-  { name: 'blue', rgb: [0, 0, 4] },
-  { name: 'green', rgb: [0, 4, 0] },
-  { name: 'yellow', rgb: [4, 4, 0] },
-  { name: 'orange', rgb: [4, 2, 0] },
-  { name: 'red', rgb: [4, 0, 0] },
-  { name: 'purple', rgb: [2, 0, 4] },
-  { name: 'darkYellow', rgb: [3, 3, 0] },
-  { name: 'purple2', rgb: [2, 0, 3] },
-];
 
 export default function ExerciseSettings() {
-  const [numCosmos, setNumCosmos] = useState(2);
-  const [duration, setDuration] = useState(30);
   const navigate = useNavigate();
   const { connectedDevices } = useWebSocket();
+  const numCosmos = connectedDevices.length;
+  const duration = 30;
 
   const handlePlay = () => {
-    // Set colors for the Cosmos that will be used in the game
-    const cosmosToUse = connectedDevices.slice(0, numCosmos);
-    cosmosToUse.forEach((device, idx) => {
-      const [r, g, b] = colorMap[idx % colorMap.length].rgb;
-      wsService.setColor(device.id, r, g, b);
-    });
-    
     navigate('/exercise', { state: { numCosmos, duration } });
   };
 
+  const handleBack = () => {
+    navigate(-1);
+  };
+
+  const handleHelp = () => {
+    alert('Help coming soon!');
+  };
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-r from-blue-200 to-purple-200">
-      <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
-        <h1 className="text-3xl font-bold mb-6 text-center">Exercise Game Settings</h1>
-        <div className="mb-4">
-          <label className="block mb-2 font-medium">Number of Cosmos</label>
-          <input
-            type="number"
-            min={2}
-            max={8}
-            value={numCosmos}
-            onChange={e => setNumCosmos(Math.max(2, Math.min(8, Number(e.target.value))))}
-            className="w-full px-3 py-2 border rounded"
-          />
+    <div className="min-h-screen flex flex-col items-center justify-center bg-purple-50 py-8">
+      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-xl">
+        <div className="flex items-center mb-4">
+          <button onClick={handleBack} className="text-gray-600 font-semibold text-lg mr-4 px-2 py-1 hover:bg-gray-100 rounded">&lt; BACK</button>
+          <h1 className="text-3xl font-bold tracking-wide text-gray-800">EXERCISE</h1>
         </div>
-        <div className="mb-4">
-          <label className="block mb-2 font-medium">Game Duration</label>
-          <select
-            value={duration}
-            onChange={e => setDuration(Number(e.target.value))}
-            className="w-full px-3 py-2 border rounded"
+        <div className="text-gray-700 text-lg mb-2">
+          Distribute the Cosmoids across the play area and swiftly press them as they illuminate to earn points before time runs out.
+        </div>
+        <div className="text-sm text-gray-500 mb-6">
+          Skills Area: Joint Attention, Reaction Time, Motor Co-ordination, Spatial Awareness
+        </div>
+        <div className="grid grid-cols-2 gap-6 mb-8">
+          <div>
+            <div className="text-xs text-gray-500 font-semibold mb-1">MUSIC TRACK</div>
+            <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-base font-medium">
+              <span className="mr-2 text-yellow-500 text-xl">🎵</span> Brass Beat
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-gray-500 font-semibold mb-1">DURATION OF GAME</div>
+            <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-base font-medium">30 seconds</div>
+          </div>
+          <div>
+            <div className="text-xs text-gray-500 font-semibold mb-1">NUMBER OF COSMOIDS</div>
+            <div className="flex gap-2 mt-1">
+              {[1,2,3,4,5,6].map(i => (
+                <div
+                  key={i}
+                  className={`w-9 h-9 flex items-center justify-center rounded-full border-2 text-lg font-bold select-none transition-all ${i <= numCosmos ? 'border-purple-500 bg-purple-100 text-purple-700' : 'border-gray-300 bg-white text-gray-300'}`}
+                >
+                  {i}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-gray-500 font-semibold mb-1">SOUND</div>
+            <div className="flex items-center h-9 pl-1">
+              <span className="text-2xl text-green-600">✔️</span>
+            </div>
+          </div>
+        </div>
+        <div className="flex justify-center gap-8 mt-8">
+          <button
+            onClick={handlePlay}
+            className="bg-green-500 hover:bg-green-600 text-white text-lg font-bold rounded-full px-10 py-3 shadow-md transition"
           >
-            {durations.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
+            PLAY
+          </button>
+          <button
+            onClick={handleHelp}
+            className="bg-white border-2 border-gray-200 hover:border-purple-400 text-gray-700 text-lg font-bold rounded-full px-10 py-3 transition"
+          >
+            HELP
+          </button>
         </div>
-        <button
-          onClick={handlePlay}
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 font-semibold"
-        >
-          Play
-        </button>
       </div>
     </div>
   );
