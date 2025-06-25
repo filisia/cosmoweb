@@ -81,8 +81,18 @@ export default function ExerciseGame() {
       if (!lastPressRef.current[activeDevice.id] || now - lastPressRef.current[activeDevice.id] > 500) {
         console.log(`Button press detected for device ${activeDevice.id}`);
         lastPressRef.current[activeDevice.id] = now;
+        wsService.setLuminosity(activeDevice.id, 0); // Set luminosity to 0 on press
         handleButtonPress(activeDevice.id);
       }
+    }
+    
+    // Check if button just changed from pressed to released
+    const wasPressed = previousButtonState === 1;
+    const isReleased = !isPressed;
+    
+    if (wasPressed && isReleased) {
+      console.log(`Button release detected for device ${activeDevice.id}`);
+      wsService.setLuminosity(activeDevice.id, 64); // Set luminosity back to max on release
     }
     
     // Update the previous state
@@ -111,6 +121,7 @@ export default function ExerciseGame() {
           wsService.setMode(device.id, 4); // Set to Button Inverted mode
           const [r, g, b] = colorMap[idx % colorMap.length].rgb;
           wsService.setColor(device.id, r, g, b);
+          wsService.setLuminosity(device.id, 64); // Set luminosity to max
         });
       }
     };
@@ -152,6 +163,16 @@ export default function ExerciseGame() {
       }
     });
   }, [deviceValues]);
+
+  // Set initial luminosity to max for all devices when they become available
+  useEffect(() => {
+    if (cosmosToUse.length > 0) {
+      cosmosToUse.forEach((device, idx) => {
+        wsService.setLuminosity(device.id, 64); // Set luminosity to max
+        console.log(`[ExerciseGame] Set initial luminosity to max for device ${device.id}`);
+      });
+    }
+  }, [cosmosToUse]);
 
   if (gameOver) {
     return (
