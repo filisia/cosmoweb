@@ -20,6 +20,7 @@ export default function ExerciseGame() {
   const [timeLeft, setTimeLeft] = useState(duration);
   const [gameOver, setGameOver] = useState(false);
   const [score, setScore] = useState(0);
+  const [gameStarted, setGameStarted] = useState(false);
   const [feedback, setFeedback] = useState(null); // 'correct' or 'incorrect'
   const { connectedDevices, deviceValues } = useWebSocket();
   const intervalRef = useRef(null);
@@ -45,7 +46,7 @@ export default function ExerciseGame() {
   }, [activeDevice, cosmosToUse.length]);
 
   const checkButtonStates = useCallback(() => {
-    if (!activeDevice || !deviceValues[activeDevice.id]) {
+    if (!gameStarted || !activeDevice || !deviceValues[activeDevice.id]) {
       return;
     }
     const deviceValue = deviceValues[activeDevice.id];
@@ -67,7 +68,7 @@ export default function ExerciseGame() {
       wsService.setLuminosity(activeDevice.id, 64);
     }
     previousButtonStates.current[activeDevice.id] = currentButtonState;
-  }, [activeDevice, deviceValues, handleButtonPress]);
+  }, [gameStarted, activeDevice, deviceValues, handleButtonPress]);
 
   useEffect(() => {
     if (gameOver) return;
@@ -119,8 +120,18 @@ export default function ExerciseGame() {
       cosmosToUse.forEach((device, idx) => {
         wsService.setLuminosity(device.id, 64);
       });
+      
+      // Initialize button states and start the game after a short delay
+      setTimeout(() => {
+        cosmosToUse.forEach(device => {
+          if (deviceValues[device.id]) {
+            previousButtonStates.current[device.id] = deviceValues[device.id].buttonState;
+          }
+        });
+        setGameStarted(true);
+      }, 1000); // 1 second delay to ensure devices are ready
     }
-  }, [cosmosToUse]);
+  }, [cosmosToUse, deviceValues]);
 
   // --- UI ---
   if (gameOver) {
