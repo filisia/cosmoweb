@@ -1,11 +1,11 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import './style.css';
-import GamePress from './GamePress';
+// import GamePress from './GamePress';
 import HomePage from './HomePage';
-import GrowShrinkGame from './GrowShrinkGame';
-import LEDModePage from './LEDModePage';
-import WhacAMole from './components/WhacAMole';
+// import GrowShrinkGame from './GrowShrinkGame';
+// import LEDModePage from './LEDModePage';
+// import WhacAMole from './components/WhacAMole';
 import { WebSocketProvider } from './contexts/WebSocketContext';
 import { GameSettingsProvider } from './contexts/GameSettingsContext';
 import ExerciseSettings from './components/ExerciseSettings';

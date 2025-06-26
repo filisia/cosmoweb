@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWebSocket } from '../contexts/WebSocketContext';
 
@@ -6,14 +6,30 @@ export default function ExerciseSettings() {
   const navigate = useNavigate();
   const { connectedDevices } = useWebSocket();
   const numCosmos = connectedDevices.length;
-  const duration = 30;
+  
+  // Duration options: [seconds, displayText]
+  const durationOptions = [
+    [30, '30s'],
+    [60, '1m'],
+    [120, '2m'],
+    [-1, '∞']
+  ];
+  
+  const [selectedDuration, setSelectedDuration] = useState(30);
 
   const handlePlay = () => {
-    navigate('/exercise', { state: { numCosmos, duration } });
+    navigate('/exercise', { state: { numCosmos, duration: selectedDuration } });
   };
 
   const handleHelp = () => {
     alert('Help coming soon!');
+  };
+
+  const formatDuration = (seconds) => {
+    if (seconds === -1) return 'Infinite';
+    if (seconds < 60) return `${seconds} seconds`;
+    if (seconds === 60) return '1 minute';
+    return `${Math.floor(seconds / 60)} minutes`;
   };
 
   return (
@@ -37,7 +53,24 @@ export default function ExerciseSettings() {
           </div>
           <div>
             <div className="text-xs text-gray-500 font-semibold mb-1">DURATION OF GAME</div>
-            <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-base font-medium">30 seconds</div>
+            <div className="flex gap-2 mt-1">
+              {durationOptions.map(([seconds, displayText]) => (
+                <div
+                  key={seconds}
+                  onClick={() => setSelectedDuration(seconds)}
+                  className={`w-12 h-9 flex items-center justify-center rounded-lg border-2 text-sm font-bold select-none transition-all cursor-pointer ${
+                    selectedDuration === seconds 
+                      ? 'border-purple-500 bg-purple-100 text-purple-700' 
+                      : 'border-gray-300 bg-white text-gray-600 hover:border-purple-300'
+                  }`}
+                >
+                  {displayText}
+                </div>
+              ))}
+            </div>
+            <div className="text-xs text-gray-500 mt-1">
+              {formatDuration(selectedDuration)}
+            </div>
           </div>
           <div>
             <div className="text-xs text-gray-500 font-semibold mb-1">NUMBER OF COSMOIDS</div>

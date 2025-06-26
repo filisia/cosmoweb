@@ -126,8 +126,8 @@ class WebSocketService {
       this.ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          console.log('[WebSocketService] Received message:', data);
-          console.log('[WebSocketService] Raw message data:', event.data);
+          // console.log('[WebSocketService] Received message:', data);
+          // console.log('[WebSocketService] Raw message data:', event.data);
           
           if (data.type === 'devices') {
             console.log('[WebSocketService] Received devices with', data.devices?.length, 'devices');
@@ -357,7 +357,7 @@ class WebSocketService {
   setLuminosity(deviceId, intensity) {
     console.log('Setting luminosity:', { deviceId, intensity });
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      intensity = Math.round((intensity * (64 - 5)) / 100) + 5;
+      // intensity = Math.round((intensity * (64 - 5)) / 100) + 5;
       let jsonToSend = {
         type: 'setLuminosity',
         deviceId: deviceId,
