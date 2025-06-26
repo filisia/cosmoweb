@@ -28,6 +28,7 @@ export default function ExerciseGame() {
   const lastPressRef = useRef({});
   const isUnmountingRef = useRef(false);
   const previousButtonStates = useRef({});
+  const hasInitializedRef = useRef(false);
 
   // Get the active device from cosmosToUse array
   const activeDevice = useMemo(() => {
@@ -41,9 +42,10 @@ export default function ExerciseGame() {
       // Remove feedback for incorrect presses
       return;
     }
+    console.log(`[ExerciseGame] Correct button press! Score: ${score + 1}, Moving from index ${activeIndex} to ${(activeIndex + 1) % cosmosToUse.length}`);
     setScore(s => s + 1);
     setActiveIndex(i => (i + 1) % cosmosToUse.length);
-  }, [activeDevice, cosmosToUse.length]);
+  }, [activeDevice, cosmosToUse.length, score, activeIndex]);
 
   const checkButtonStates = useCallback(() => {
     if (!gameStarted || !activeDevice || !deviceValues[activeDevice.id]) {
@@ -58,6 +60,7 @@ export default function ExerciseGame() {
       const now = Date.now();
       if (!lastPressRef.current[activeDevice.id] || now - lastPressRef.current[activeDevice.id] > 500) {
         lastPressRef.current[activeDevice.id] = now;
+        console.log(`[ExerciseGame] Button pressed on device ${activeDevice.id} - setting luminosity to 0`);
         wsService.setLuminosity(activeDevice.id, 0);
         handleButtonPress(activeDevice.id);
       }
@@ -65,7 +68,7 @@ export default function ExerciseGame() {
     const wasPressed = previousButtonState === 1;
     const isReleased = !isPressed;
     if (wasPressed && isReleased) {
-      wsService.setLuminosity(activeDevice.id, 64);
+      // Don't set luminosity here - let the activeIndex effect handle it
     }
     previousButtonStates.current[activeDevice.id] = currentButtonState;
   }, [gameStarted, activeDevice, deviceValues, handleButtonPress]);
@@ -85,7 +88,7 @@ export default function ExerciseGame() {
       if (!isUnmountingRef.current) {
         isUnmountingRef.current = true;
         cosmosToUse.forEach((device, idx) => {
-          wsService.setMode(device.id, 4);
+          // wsService.setMode(device.id, 4);
           const [r, g, b] = colorMap[idx % colorMap.length].rgb;
           wsService.setColor(device.id, r, g, b);
           wsService.setLuminosity(device.id, 64);
@@ -116,22 +119,48 @@ export default function ExerciseGame() {
   }, [gameOver]);
 
   useEffect(() => {
-    if (cosmosToUse.length > 0) {
+    if (cosmosToUse.length > 0 && !hasInitializedRef.current) {
+      hasInitializedRef.current = true;
+      console.log(`[ExerciseGame] Initializing ${cosmosToUse.length} devices`);
       cosmosToUse.forEach((device, idx) => {
-        wsService.setLuminosity(device.id, 64);
+        // Set mode, color, and luminosity for each device
+        console.log(`[ExerciseGame] Setting up device ${device.id} (index ${idx}) - Mode: 4, Color: ${colorMap[idx % colorMap.length].name}, Luminosity: 0`);
+        // wsService.setMode(device.id, 4);
+        const [r, g, b] = colorMap[idx % colorMap.length].rgb;
+        wsService.setColor(device.id, r, g, b);
+        wsService.setLuminosity(device.id, 0); // Start with zero luminosity
       });
       
       // Initialize button states and start the game after a short delay
       setTimeout(() => {
+        console.log(`[ExerciseGame] Game starting - initializing button states`);
         cosmosToUse.forEach(device => {
           if (deviceValues[device.id]) {
             previousButtonStates.current[device.id] = deviceValues[device.id].buttonState;
+            console.log(`[ExerciseGame] Initial button state for ${device.id}: ${deviceValues[device.id].buttonState}`);
           }
         });
         setGameStarted(true);
+        console.log(`[ExerciseGame] Game started!`);
       }, 1000); // 1 second delay to ensure devices are ready
     }
-  }, [cosmosToUse, deviceValues]);
+  }, [cosmosToUse]); // Removed deviceValues dependency to prevent multiple runs
+
+  // Light up only the active device
+  useEffect(() => {
+    if (gameStarted && cosmosToUse.length > 0) {
+      console.log(`[ExerciseGame] Setting device lighting - Active index: ${activeIndex}, Total devices: ${cosmosToUse.length}`);
+      cosmosToUse.forEach((device, idx) => {
+        if (idx === activeIndex) {
+          console.log(`[ExerciseGame] Lighting up device ${device.id} (index ${idx}) with luminosity 64`);
+          wsService.setLuminosity(device.id, 64); // Light up active device
+        } else {
+          console.log(`[ExerciseGame] Setting device ${device.id} (index ${idx}) to luminosity 0`);
+          wsService.setLuminosity(device.id, 0); // Keep others dark
+        }
+      });
+    }
+  }, [activeIndex, gameStarted, cosmosToUse]);
 
   // --- UI ---
   if (gameOver) {
