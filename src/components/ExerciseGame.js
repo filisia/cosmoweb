@@ -29,6 +29,7 @@ export default function ExerciseGame() {
   const isUnmountingRef = useRef(false);
   const previousButtonStates = useRef({});
   const hasInitializedRef = useRef(false);
+  const currentLightingState = useRef({}); // Track current lighting state to prevent unnecessary updates
 
   // Get the active device from cosmosToUse array
   const activeDevice = useMemo(() => {
@@ -38,6 +39,7 @@ export default function ExerciseGame() {
 
   // Handle button press for the active device
   const handleButtonPress = useCallback((deviceId) => {
+    // console.log(`[ExerciseGame] Button pressed on device ${deviceId}`);
     if (!activeDevice || deviceId !== activeDevice.id) {
       // Remove feedback for incorrect presses
       return;
@@ -60,8 +62,7 @@ export default function ExerciseGame() {
       const now = Date.now();
       if (!lastPressRef.current[activeDevice.id] || now - lastPressRef.current[activeDevice.id] > 500) {
         lastPressRef.current[activeDevice.id] = now;
-        console.log(`[ExerciseGame] Button pressed on device ${activeDevice.id} - setting luminosity to 0`);
-        wsService.setLuminosity(activeDevice.id, 0);
+        // console.log(`[ExerciseGame] Button pressed on device ${activeDevice.id}`);
         handleButtonPress(activeDevice.id);
       }
     }
@@ -105,6 +106,10 @@ export default function ExerciseGame() {
 
   useEffect(() => {
     if (gameOver) return;
+    
+    // Don't start countdown timer if duration is infinite (-1)
+    if (duration === -1) return;
+    
     intervalRef.current = setInterval(() => {
       setTimeLeft(t => {
         if (t <= 1) {
@@ -116,32 +121,33 @@ export default function ExerciseGame() {
       });
     }, 1000);
     return () => clearInterval(intervalRef.current);
-  }, [gameOver]);
+  }, [gameOver, duration]);
 
   useEffect(() => {
     if (cosmosToUse.length > 0 && !hasInitializedRef.current) {
       hasInitializedRef.current = true;
-      console.log(`[ExerciseGame] Initializing ${cosmosToUse.length} devices`);
+      // console.log(`[ExerciseGame] Initializing ${cosmosToUse.length} devices`);
       cosmosToUse.forEach((device, idx) => {
         // Set mode, color, and luminosity for each device
-        console.log(`[ExerciseGame] Setting up device ${device.id} (index ${idx}) - Mode: 4, Color: ${colorMap[idx % colorMap.length].name}, Luminosity: 0`);
+        // console.log(`[ExerciseGame] Setting up device ${device.id} (index ${idx}) - Mode: 4, Color: ${colorMap[idx % colorMap.length].name}, Luminosity: 0`);
         // wsService.setMode(device.id, 4);
         const [r, g, b] = colorMap[idx % colorMap.length].rgb;
         wsService.setColor(device.id, r, g, b);
         wsService.setLuminosity(device.id, 0); // Start with zero luminosity
+        currentLightingState.current[device.id] = 0; // Initialize lighting state tracking
       });
       
       // Initialize button states and start the game after a short delay
       setTimeout(() => {
-        console.log(`[ExerciseGame] Game starting - initializing button states`);
+        // console.log(`[ExerciseGame] Game starting - initializing button states`);
         cosmosToUse.forEach(device => {
           if (deviceValues[device.id]) {
             previousButtonStates.current[device.id] = deviceValues[device.id].buttonState;
-            console.log(`[ExerciseGame] Initial button state for ${device.id}: ${deviceValues[device.id].buttonState}`);
+            // console.log(`[ExerciseGame] Initial button state for ${device.id}: ${deviceValues[device.id].buttonState}`);
           }
         });
         setGameStarted(true);
-        console.log(`[ExerciseGame] Game started!`);
+        // console.log(`[ExerciseGame] Game started!`);
       }, 1000); // 1 second delay to ensure devices are ready
     }
   }, [cosmosToUse]); // Removed deviceValues dependency to prevent multiple runs
@@ -149,18 +155,20 @@ export default function ExerciseGame() {
   // Light up only the active device
   useEffect(() => {
     if (gameStarted && cosmosToUse.length > 0) {
-      console.log(`[ExerciseGame] Setting device lighting - Active index: ${activeIndex}, Total devices: ${cosmosToUse.length}`);
+      // console.log(`[ExerciseGame] Setting device lighting - Active index: ${activeIndex}, Total devices: ${cosmosToUse.length}`);
       cosmosToUse.forEach((device, idx) => {
-        if (idx === activeIndex) {
-          console.log(`[ExerciseGame] Lighting up device ${device.id} (index ${idx}) with luminosity 64`);
-          wsService.setLuminosity(device.id, 64); // Light up active device
-        } else {
-          console.log(`[ExerciseGame] Setting device ${device.id} (index ${idx}) to luminosity 0`);
-          wsService.setLuminosity(device.id, 0); // Keep others dark
+        const shouldBeLit = idx === activeIndex;
+        const luminosity = shouldBeLit ? 64 : 0;
+        
+        // Only update if the lighting state has actually changed
+        if (currentLightingState.current[device.id] !== luminosity) {
+          // console.log(`[ExerciseGame] ${shouldBeLit ? 'Lighting up' : 'Setting'} device ${device.id} (index ${idx}) to luminosity ${luminosity}`);
+          wsService.setLuminosity(device.id, luminosity);
+          currentLightingState.current[device.id] = luminosity;
         }
       });
     }
-  }, [activeIndex, gameStarted, cosmosToUse]);
+  }, [activeIndex, gameStarted]); // Removed cosmosToUse dependency to prevent unnecessary re-runs
 
   // --- UI ---
   if (gameOver) {
@@ -194,7 +202,9 @@ export default function ExerciseGame() {
         <div className="flex-1 flex flex-col items-center">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xl">⏳</span>
-            <span className="text-lg font-semibold">{String(Math.floor(timeLeft/60)).padStart(2,'0')}:{String(timeLeft%60).padStart(2,'0')}</span>
+            <span className="text-lg font-semibold">
+              {duration === -1 ? '∞' : `${String(Math.floor(timeLeft/60)).padStart(2,'0')}:${String(timeLeft%60).padStart(2,'0')}`}
+            </span>
           </div>
           <div className="mt-1">
             <span className="inline-flex items-center px-4 py-1 rounded-full bg-purple-100 text-purple-700 font-semibold text-base">

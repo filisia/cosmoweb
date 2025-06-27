@@ -62,22 +62,22 @@ export function WebSocketProvider({ children }) {
   };
 
   const handleMessage = useCallback((message) => {
-    console.log('[WebSocketContext] Handling message:', message.type);
-    console.log('[WebSocketContext] Full message data:', message);
+    // console.log('[WebSocketContext] Handling message:', message.type);
+    // console.log('[WebSocketContext] Full message data:', message);
 
     switch (message.type) {
       case 'connected':
         setWsConnected(true);
-        console.log('[WebSocketContext] WebSocket connected');
+        // console.log('[WebSocketContext] WebSocket connected');
         break;
 
       case 'disconnected':
         setWsConnected(false);
-        console.log('[WebSocketContext] WebSocket disconnected');
+        // console.log('[WebSocketContext] WebSocket disconnected');
         break;
 
       case 'devices':
-        console.log('[WebSocketContext] Handling devices message:', message.devices);
+        // console.log('[WebSocketContext] Handling devices message:', message.devices);
         setConnectedDevices(message.devices);
         message.devices.forEach(device => {
           // Convert string button states to numeric values for consistency
@@ -106,7 +106,7 @@ export function WebSocketProvider({ children }) {
         break;
 
       case 'buttonPress':
-        console.log('[WebSocketContext] Button press detected:', message);
+        // console.log('[WebSocketContext] Button press detected:', message);
         setDeviceValues(prev => ({
           ...prev,
           [message.deviceId]: {
@@ -118,7 +118,7 @@ export function WebSocketProvider({ children }) {
         break;
 
       case 'buttonRelease':
-        console.log('[WebSocketContext] Button release detected:', message);
+        // console.log('[WebSocketContext] Button release detected:', message);
         setDeviceValues(prev => ({
           ...prev,
           [message.deviceId]: {
@@ -130,7 +130,7 @@ export function WebSocketProvider({ children }) {
         break;
 
       case 'buttonStateChanged':
-        console.log('[WebSocketContext] Button state changed:', message);
+        // console.log('[WebSocketContext] Button state changed:', message);
         // Convert string button states to numeric values for consistency
         let buttonStateValue = 0;
         if (message.buttonState || message.state) {
@@ -153,29 +153,29 @@ export function WebSocketProvider({ children }) {
         break;
 
       case 'error':
-        console.error('[WebSocketContext] Error:', message.error);
+        // console.error('[WebSocketContext] Error:', message.error);
         break;
 
       default:
-        console.log('[WebSocketContext] Unhandled message type:', message.type);
+        // console.log('[WebSocketContext] Unhandled message type:', message.type);
     }
   }, [wsService]);
 
   useEffect(() => {
-    console.log('[WebSocketContext] Setting up WebSocket connection');
+    // console.log('[WebSocketContext] Setting up WebSocket connection');
     let mounted = true;
 
     // Connect to WebSocket
-    console.log('[WebSocketContext] Initiating WebSocket connection');
+    // console.log('[WebSocketContext] Initiating WebSocket connection');
     wsService.connect();
 
     // Add message listener
-    console.log('[WebSocketContext] Adding message listener');
+    // console.log('[WebSocketContext] Adding message listener');
     const removeListener = wsService.addListener(handleMessage);
 
     // Cleanup on unmount
     return () => {
-      console.log('[WebSocketContext] Cleaning up WebSocket connection');
+      // console.log('[WebSocketContext] Cleaning up WebSocket connection');
       mounted = false;
       removeListener();
       wsService.disconnect();

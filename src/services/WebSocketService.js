@@ -47,7 +47,7 @@ class WebSocketService {
   }
 
   notifyListeners(data) {
-    console.log('[WebSocketService] Notifying listeners:', data.type, 'Total listeners:', this.listeners.size);
+    // console.log('[WebSocketService] Notifying listeners:', data.type, 'Total listeners:', this.listeners.size);
     this.listeners.forEach(listener => {
       try {
         listener(data);
@@ -130,13 +130,13 @@ class WebSocketService {
           // console.log('[WebSocketService] Raw message data:', event.data);
           
           if (data.type === 'devices') {
-            console.log('[WebSocketService] Received devices with', data.devices?.length, 'devices');
+            // console.log('[WebSocketService] Received devices with', data.devices?.length, 'devices');
             // Transform the devices data to show 'Available' instead of 'Connected' when connected is false
             const transformedDevices = data.devices?.map(device => ({
               ...device,
               status: device.connected ? 'Connected' : 'Available'
             })) || [];
-            console.log('[WebSocketService] Devices:', JSON.stringify(transformedDevices));
+            // console.log('[WebSocketService] Devices:', JSON.stringify(transformedDevices));
             this.connectedDevices = transformedDevices;
           }
           
@@ -150,7 +150,7 @@ class WebSocketService {
               operation: data.operation
             });
           } else {
-            console.log('[WebSocketService] Notifying listeners of message type:', data.type);
+            // console.log('[WebSocketService] Notifying listeners of message type:', data.type);
             this.notifyListeners(data);
           }
         } catch (error) {
@@ -355,7 +355,7 @@ class WebSocketService {
   }
 
   setLuminosity(deviceId, intensity) {
-    console.log('Setting luminosity:', { deviceId, intensity });
+    // console.log('Setting luminosity:', { deviceId, intensity });
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       // intensity = Math.round((intensity * (64 - 5)) / 100) + 5;
       let jsonToSend = {
