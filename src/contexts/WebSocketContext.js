@@ -111,7 +111,7 @@ export function WebSocketProvider({ children }) {
         break;
 
       case 'buttonPress':
-        console.log('[WebSocketContext] 🎯 Button press detected:', message);
+        // console.log('[WebSocketContext] 🎯 Button press detected:', message);
         setDeviceValues(prev => ({
           ...prev,
           [message.deviceId]: {
@@ -123,7 +123,7 @@ export function WebSocketProvider({ children }) {
         break;
 
       case 'buttonRelease':
-        console.log('[WebSocketContext] 🎯 Button release detected:', message);
+        // console.log('[WebSocketContext] 🎯 Button release detected:', message);
         setDeviceValues(prev => ({
           ...prev,
           [message.deviceId]: {
@@ -135,7 +135,7 @@ export function WebSocketProvider({ children }) {
         break;
 
       case 'buttonStateChanged':
-        console.log('[WebSocketContext] 🎯 Button state changed:', message);
+        // console.log('[WebSocketContext] 🎯 Button state changed:', message);
         // Convert string button states to numeric values for consistency
         let buttonStateValue = 0;
         if (message.buttonState || message.state) {
@@ -147,13 +147,13 @@ export function WebSocketProvider({ children }) {
           }
         }
         
-        console.log('[WebSocketContext] 🎯 Processing button state change:', {
-          deviceId: message.deviceId,
-          originalState: message.buttonState || message.state,
-          convertedState: buttonStateValue,
-          pressValue: message.pressValue || 0,
-          timestamp: new Date().toISOString()
-        });
+        // console.log('[WebSocketContext] 🎯 Processing button state change:', {
+        //   deviceId: message.deviceId,
+        //   originalState: message.buttonState || message.state,
+        //   convertedState: buttonStateValue,
+        //   pressValue: message.pressValue || 0,
+        //   timestamp: new Date().toISOString()
+        // });
         
         setDeviceValues(prev => {
           const newValues = {

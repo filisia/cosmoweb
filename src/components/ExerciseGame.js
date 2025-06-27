@@ -51,8 +51,8 @@ export default function ExerciseGame() {
     // console.log(`[ExerciseGame] 🎯 activeIndex: ${activeIndex}, cosmosToUse:`, cosmosToUse.map(d => d.id));
     
     if (!activeDevice || deviceId !== activeDevice.id) {
-      // console.log(`[ExerciseGame] ❌ Button press ignored - deviceId mismatch or no active device`);
-      // console.log(`[ExerciseGame] ❌ Expected: ${activeDevice?.id}, Got: ${deviceId}`);
+      console.log(`[ExerciseGame] ❌ Button press ignored - deviceId mismatch or no active device`);
+      console.log(`[ExerciseGame] ❌ Expected: ${activeDevice?.id}, Got: ${deviceId}`);
       return;
     }
     console.log(`[ExerciseGame] ✅ Correct button press! Score: ${score + 1}, Moving from index ${activeIndex} to ${(activeIndex + 1) % cosmosToUse.length}`);
@@ -62,12 +62,12 @@ export default function ExerciseGame() {
 
   const checkButtonStates = useCallback(() => {
     if (!gameStarted || !activeDevice || !deviceValues[activeDevice.id]) {
-      // console.log(`[ExerciseGame] 🔍 checkButtonStates skipped:`, {
-      //   gameStarted,
-      //   hasActiveDevice: !!activeDevice,
-      //   activeDeviceId: activeDevice?.id,
-      //   hasDeviceValue: !!deviceValues[activeDevice?.id]
-      // });
+      console.log(`[ExerciseGame] 🔍 checkButtonStates skipped:`, {
+        gameStarted,
+        hasActiveDevice: !!activeDevice,
+        activeDeviceId: activeDevice?.id,
+        hasDeviceValue: !!deviceValues[activeDevice?.id]
+      });
       return;
     }
     const deviceValue = deviceValues[activeDevice.id];
@@ -77,11 +77,11 @@ export default function ExerciseGame() {
     // Ensure previousButtonState is initialized
     if (previousButtonState === undefined) {
       previousButtonStates.current[activeDevice.id] = currentButtonState;
-      // console.log(`[ExerciseGame] 🔍 Initialized button state for ${activeDevice.id}: ${currentButtonState}`);
+      console.log(`[ExerciseGame] 🔍 Initialized previousButtonState for ${activeDevice.id} to ${currentButtonState}`);
       return;
     }
     
-    const wasReleased = !previousButtonState || previousButtonState === 0;
+    const wasReleased = previousButtonState === 0;
     const isPressed = currentButtonState === 1;
     
     // console.log('[ExerciseGame] 🔍 Checking button states:', {
@@ -96,10 +96,24 @@ export default function ExerciseGame() {
     // });
     
     if (wasReleased && isPressed) {
-      handleButtonPress(activeDevice.id);
+      const now = Date.now();
+      if (!lastPressRef.current[activeDevice.id] || now - lastPressRef.current[activeDevice.id] > 500) {
+        lastPressRef.current[activeDevice.id] = now;
+        console.log(`[ExerciseGame] 🎯 Button pressed on device ${activeDevice.id} - calling handleButtonPress`);
+        handleButtonPress(activeDevice.id);
+      } else {
+        console.log(`[ExerciseGame] ⏰ Button press ignored due to debouncing (${now - lastPressRef.current[activeDevice.id]}ms since last press)`);
+      }
     }
     
-    // Update previous button state
+    const wasPressed = previousButtonState === 1;
+    const isReleased = currentButtonState === 0;
+    if (wasPressed && isReleased) {
+      console.log(`[ExerciseGame] 🔄 Button released on device ${activeDevice.id}`);
+      // Don't set luminosity here - let the activeIndex effect handle it
+    }
+    
+    // Update previous state
     previousButtonStates.current[activeDevice.id] = currentButtonState;
   }, [gameStarted, activeDevice, deviceValues, handleButtonPress]);
 
@@ -128,7 +142,7 @@ export default function ExerciseGame() {
           // wsService.setMode(device.id, 4);
           const [r, g, b] = colorMap[idx % colorMap.length].rgb;
           wsService.setColor(device.id, r, g, b);
-          wsService.setLuminosity(device.id, 64);
+          wsService.setLuminosity(device.id, 0);
         });
       }
     };
@@ -165,46 +179,48 @@ export default function ExerciseGame() {
       console.log(`[ExerciseGame] 🎮 Initializing ${cosmosToUse.length} devices`);
       cosmosToUse.forEach((device, idx) => {
         // Set mode, color, and luminosity for each device
-        // console.log(`[ExerciseGame] 🎮 Setting up device ${device.id} (index ${idx}) - Color: ${colorMap[idx % colorMap.length].name}, Luminosity: 0`);
+        console.log(`[ExerciseGame] 🎮 Setting up device ${device.id} (index ${idx}) - Color: ${colorMap[idx % colorMap.length].name}, Luminosity: 0`);
         const [r, g, b] = colorMap[idx % colorMap.length].rgb;
         wsService.setColor(device.id, r, g, b);
         wsService.setLuminosity(device.id, 0); // Start with zero luminosity
-        currentLightingState.current[device.id] = 0;
-        previousButtonStates.current[device.id] = 0; // Initialize to released state
+        currentLightingState.current[device.id] = 0; // Initialize lighting state tracking
+        
+        // Initialize button state immediately if available
+        if (deviceValues[device.id]) {
+          previousButtonStates.current[device.id] = deviceValues[device.id].buttonState;
+          console.log(`[ExerciseGame] 🎮 Initial button state for ${device.id}: ${deviceValues[device.id].buttonState}`);
+        } else {
+          // Initialize to released state if no device value available
+          previousButtonStates.current[device.id] = 0;
+          console.log(`[ExerciseGame] 🎮 Initialized button state for ${device.id} to 0 (released)`);
+        }
       });
       
-      // Set the first device as active (light it up)
-      if (cosmosToUse.length > 0) {
-        const firstDevice = cosmosToUse[0];
-        // console.log(`[ExerciseGame] 🎮 Lighting up first device: ${firstDevice.id}`);
-        wsService.setLuminosity(firstDevice.id, 64);
-        currentLightingState.current[firstDevice.id] = 64;
-      }
+      // Start the game immediately
+      console.log(`[ExerciseGame] 🎮 Game starting immediately`);
+      setGameStarted(true);
     }
-  }, [cosmosToUse, wsService]);
+  }, [cosmosToUse, deviceValues]); // Added deviceValues dependency to ensure proper initialization
 
   // Light up only the active device
   useEffect(() => {
-    if (!activeDevice) return;
-    
-    // console.log(`[ExerciseGame] 💡 Lighting active device: ${activeDevice.id} (index ${activeIndex})`);
-    
-    // Turn off all devices first
-    cosmosToUse.forEach(device => {
-      if (currentLightingState.current[device.id] !== 0) {
-        // console.log(`[ExerciseGame] 💡 Turning off device: ${device.id}`);
-        wsService.setLuminosity(device.id, 0);
-        currentLightingState.current[device.id] = 0;
-      }
-    });
-    
-    // Light up the active device
-    if (currentLightingState.current[activeDevice.id] !== 64) {
-      // console.log(`[ExerciseGame] 💡 Lighting up active device: ${activeDevice.id}`);
-      wsService.setLuminosity(activeDevice.id, 64);
-      currentLightingState.current[activeDevice.id] = 64;
+    if (gameStarted && cosmosToUse.length > 0) {
+      console.log(`[ExerciseGame] 💡 Setting device lighting - Active index: ${activeIndex}, Total devices: ${cosmosToUse.length}`);
+      cosmosToUse.forEach((device, idx) => {
+        const shouldBeLit = idx === activeIndex;
+        const luminosity = shouldBeLit ? 64 : 0;
+        
+        // Only update if the lighting state has actually changed
+        if (currentLightingState.current[device.id] !== luminosity) {
+          console.log(`[ExerciseGame] 💡 ${shouldBeLit ? 'Lighting up' : 'Turning off'} device ${device.id} (index ${idx}) to luminosity ${luminosity}`);
+          wsService.setLuminosity(device.id, luminosity);
+          currentLightingState.current[device.id] = luminosity;
+        } else {
+          console.log(`[ExerciseGame] 💡 Skipping luminosity update for device ${device.id} - already at ${luminosity}`);
+        }
+      });
     }
-  }, [activeDevice, activeIndex, cosmosToUse, wsService]);
+  }, [activeIndex, gameStarted]); // Removed cosmosToUse dependency to prevent unnecessary re-runs
 
   // --- UI ---
   if (gameOver) {

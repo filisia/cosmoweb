@@ -141,13 +141,13 @@ class WebSocketService {
           
           // Special logging for button events
           if (data.type === 'buttonStateChanged' || data.type === 'buttonPress' || data.type === 'buttonRelease') {
-            console.log('[WebSocketService] 🎯 BUTTON EVENT RECEIVED:', {
-              type: data.type,
-              deviceId: data.deviceId,
-              state: data.state || data.buttonState,
-              pressValue: data.pressValue,
-              timestamp: new Date().toISOString()
-            });
+            // console.log('[WebSocketService] 🎯 BUTTON EVENT RECEIVED:', {
+            //   type: data.type,
+            //   deviceId: data.deviceId,
+            //   state: data.state || data.buttonState,
+            //   pressValue: data.pressValue,
+            //   timestamp: new Date().toISOString()
+            // });
           }
           
           // Handle error messages from the bridge
