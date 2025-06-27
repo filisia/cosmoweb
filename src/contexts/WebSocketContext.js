@@ -62,22 +62,21 @@ export function WebSocketProvider({ children }) {
   };
 
   const handleMessage = useCallback((message) => {
-    // console.log('[WebSocketContext] Handling message:', message.type);
-    // console.log('[WebSocketContext] Full message data:', message);
+    console.log('[WebSocketContext] Handling message:', message.type, message);
 
     switch (message.type) {
       case 'connected':
         setWsConnected(true);
-        // console.log('[WebSocketContext] WebSocket connected');
+        console.log('[WebSocketContext] WebSocket connected');
         break;
 
       case 'disconnected':
         setWsConnected(false);
-        // console.log('[WebSocketContext] WebSocket disconnected');
+        console.log('[WebSocketContext] WebSocket disconnected');
         break;
 
       case 'devices':
-        // console.log('[WebSocketContext] Handling devices message:', message.devices);
+        console.log('[WebSocketContext] Handling devices message:', message.devices);
         setConnectedDevices(message.devices);
         message.devices.forEach(device => {
           // Convert string button states to numeric values for consistency
@@ -90,6 +89,12 @@ export function WebSocketProvider({ children }) {
               buttonStateValue = 0;
             }
           }
+          
+          console.log('[WebSocketContext] Updating device values for:', device.id, {
+            buttonState: buttonStateValue,
+            pressValue: device.pressValue || 0,
+            connected: device.connected
+          });
           
           setDeviceValues(prev => ({
             ...prev,
@@ -106,7 +111,7 @@ export function WebSocketProvider({ children }) {
         break;
 
       case 'buttonPress':
-        // console.log('[WebSocketContext] Button press detected:', message);
+        console.log('[WebSocketContext] 🎯 Button press detected:', message);
         setDeviceValues(prev => ({
           ...prev,
           [message.deviceId]: {
@@ -118,7 +123,7 @@ export function WebSocketProvider({ children }) {
         break;
 
       case 'buttonRelease':
-        // console.log('[WebSocketContext] Button release detected:', message);
+        console.log('[WebSocketContext] 🎯 Button release detected:', message);
         setDeviceValues(prev => ({
           ...prev,
           [message.deviceId]: {
@@ -130,7 +135,7 @@ export function WebSocketProvider({ children }) {
         break;
 
       case 'buttonStateChanged':
-        // console.log('[WebSocketContext] Button state changed:', message);
+        console.log('[WebSocketContext] 🎯 Button state changed:', message);
         // Convert string button states to numeric values for consistency
         let buttonStateValue = 0;
         if (message.buttonState || message.state) {
@@ -142,22 +147,38 @@ export function WebSocketProvider({ children }) {
           }
         }
         
-        setDeviceValues(prev => ({
-          ...prev,
-          [message.deviceId]: {
-            ...prev[message.deviceId],
-            buttonState: buttonStateValue,
-            pressValue: message.pressValue || 0
-          }
-        }));
+        console.log('[WebSocketContext] 🎯 Processing button state change:', {
+          deviceId: message.deviceId,
+          originalState: message.buttonState || message.state,
+          convertedState: buttonStateValue,
+          pressValue: message.pressValue || 0,
+          timestamp: new Date().toISOString()
+        });
+        
+        setDeviceValues(prev => {
+          const newValues = {
+            ...prev,
+            [message.deviceId]: {
+              ...prev[message.deviceId],
+              buttonState: buttonStateValue,
+              pressValue: message.pressValue || 0
+            }
+          };
+          console.log('[WebSocketContext] 🎯 Updated device values:', {
+            deviceId: message.deviceId,
+            newButtonState: newValues[message.deviceId].buttonState,
+            newPressValue: newValues[message.deviceId].pressValue
+          });
+          return newValues;
+        });
         break;
 
       case 'error':
-        // console.error('[WebSocketContext] Error:', message.error);
+        console.error('[WebSocketContext] Error:', message.error);
         break;
 
       default:
-        // console.log('[WebSocketContext] Unhandled message type:', message.type);
+        console.log('[WebSocketContext] Unhandled message type:', message.type);
     }
   }, [wsService]);
 

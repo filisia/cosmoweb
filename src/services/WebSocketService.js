@@ -126,23 +126,33 @@ class WebSocketService {
       this.ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          // console.log('[WebSocketService] Received message:', data);
-          // console.log('[WebSocketService] Raw message data:', event.data);
+          console.log('[WebSocketService] Received message:', data.type, data);
           
           if (data.type === 'devices') {
-            // console.log('[WebSocketService] Received devices with', data.devices?.length, 'devices');
+            console.log('[WebSocketService] Received devices with', data.devices?.length, 'devices');
             // Transform the devices data to show 'Available' instead of 'Connected' when connected is false
             const transformedDevices = data.devices?.map(device => ({
               ...device,
               status: device.connected ? 'Connected' : 'Available'
             })) || [];
-            // console.log('[WebSocketService] Devices:', JSON.stringify(transformedDevices));
+            console.log('[WebSocketService] Transformed devices:', JSON.stringify(transformedDevices));
             this.connectedDevices = transformedDevices;
+          }
+          
+          // Special logging for button events
+          if (data.type === 'buttonStateChanged' || data.type === 'buttonPress' || data.type === 'buttonRelease') {
+            console.log('[WebSocketService] 🎯 BUTTON EVENT RECEIVED:', {
+              type: data.type,
+              deviceId: data.deviceId,
+              state: data.state || data.buttonState,
+              pressValue: data.pressValue,
+              timestamp: new Date().toISOString()
+            });
           }
           
           // Handle error messages from the bridge
           if (data.type === 'error') {
-            console.error('Bridge error:', data);
+            console.error('[WebSocketService] Bridge error:', data);
             this.notifyListeners({
               type: 'error',
               error: data.error || 'Unknown error',
@@ -150,7 +160,7 @@ class WebSocketService {
               operation: data.operation
             });
           } else {
-            // console.log('[WebSocketService] Notifying listeners of message type:', data.type);
+            console.log('[WebSocketService] Notifying listeners of message type:', data.type);
             this.notifyListeners(data);
           }
         } catch (error) {
