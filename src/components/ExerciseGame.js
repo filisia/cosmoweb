@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import wsService from '../services/WebSocketService';
+import useMIDISound from '../hooks/useMIDISound';
 
 const colorMap = [
   { name: 'blue', rgb: [0, 0, 4], tailwind: 'border-blue-500', bgTailwind: 'bg-blue-500' },
@@ -15,7 +16,7 @@ const colorMap = [
 export default function ExerciseGame() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { numCosmos = 2, duration = 30 } = location.state || {};
+  const { numCosmos = 2, duration = 30, soundEnabled = true } = location.state || {};
   const [activeIndex, setActiveIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(duration);
   const [gameOver, setGameOver] = useState(false);
@@ -30,6 +31,9 @@ export default function ExerciseGame() {
   const previousButtonStates = useRef({});
   const hasInitializedRef = useRef(false);
   const currentLightingState = useRef({}); // Track current lighting state to prevent unnecessary updates
+
+  // Initialize MIDI sound system
+  const playMIDINote = useMIDISound(soundEnabled);
 
   // Get the active device from cosmosToUse array
   const activeDevice = useMemo(() => {
@@ -56,9 +60,13 @@ export default function ExerciseGame() {
       return;
     }
     console.log(`[ExerciseGame] ✅ Correct button press! Score: ${score + 1}, Moving from index ${activeIndex} to ${(activeIndex + 1) % cosmosToUse.length}`);
+    
+    // Play MIDI note based on the current active index
+    playMIDINote(activeIndex, 100, 0.3);
+    
     setScore(s => s + 1);
     setActiveIndex(i => (i + 1) % cosmosToUse.length);
-  }, [activeDevice, cosmosToUse, score, activeIndex]);
+  }, [activeDevice, cosmosToUse, score, activeIndex, playMIDINote]);
 
   const checkButtonStates = useCallback(() => {
     if (!gameStarted || !activeDevice || !deviceValues[activeDevice.id]) {

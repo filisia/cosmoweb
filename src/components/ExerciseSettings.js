@@ -16,9 +16,10 @@ export default function ExerciseSettings() {
   ];
   
   const [selectedDuration, setSelectedDuration] = useState(30);
+  const [soundEnabled, setSoundEnabled] = useState(true);
 
   const handlePlay = () => {
-    navigate('/exercise', { state: { numCosmos, duration: selectedDuration } });
+    navigate('/exercise', { state: { numCosmos, duration: selectedDuration, soundEnabled } });
   };
 
   const handleHelp = () => {
@@ -87,8 +88,15 @@ export default function ExerciseSettings() {
           </div>
           <div>
             <div className="text-xs text-gray-500 font-semibold mb-1">SOUND</div>
-            <div className="flex items-center h-9 pl-1">
-              <span className="text-2xl text-green-600">✔️</span>
+            <div 
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className="flex items-center h-9 pl-1 cursor-pointer hover:bg-gray-50 rounded-lg transition-colors"
+            >
+              {soundEnabled ? (
+                <span className="text-2xl text-green-600">🔊</span>
+              ) : (
+                <span className="text-2xl text-gray-400">🔇</span>
+              )}
             </div>
           </div>
         </div>
