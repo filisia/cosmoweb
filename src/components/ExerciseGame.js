@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import wsService from '../services/WebSocketService';
 import useMIDISound from '../hooks/useMIDISound';
+import useBackgroundMusic from '../hooks/useBackgroundMusic';
 
 const colorMap = [
   { name: 'blue', rgb: [0, 0, 4], tailwind: 'border-blue-500', bgTailwind: 'bg-blue-500' },
@@ -16,7 +17,7 @@ const colorMap = [
 export default function ExerciseGame() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { numCosmos = 2, duration = 30, soundEnabled = true } = location.state || {};
+  const { numCosmos = 2, duration = 30, soundEnabled = true, backgroundTrackId = 'brassbeat', backgroundVolume = 30 } = location.state || {};
   const [activeIndex, setActiveIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(duration);
   const [gameOver, setGameOver] = useState(false);
@@ -34,6 +35,14 @@ export default function ExerciseGame() {
 
   // Initialize MIDI sound system
   const playMIDINote = useMIDISound(soundEnabled);
+  
+  // Initialize background music system
+  const { selectedTrack, setVolume } = useBackgroundMusic(backgroundTrackId, gameStarted && !gameOver);
+
+  // Set background music volume
+  useEffect(() => {
+    setVolume(backgroundVolume / 100); // Convert percentage to 0-1 range
+  }, [backgroundVolume, setVolume]);
 
   // Get the active device from cosmosToUse array
   const activeDevice = useMemo(() => {
@@ -268,7 +277,7 @@ export default function ExerciseGame() {
           </div>
           <div className="mt-1">
             <span className="inline-flex items-center px-4 py-1 rounded-full bg-purple-100 text-purple-700 font-semibold text-base">
-              <span className="mr-2 text-xl">🎵</span> Brass Beat
+              <span className="mr-2 text-xl">🎵</span> {selectedTrack.name}
             </span>
           </div>
           <div className="mt-2">

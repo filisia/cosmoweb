@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWebSocket } from '../contexts/WebSocketContext';
+import { BACKGROUND_TRACKS } from '../hooks/useBackgroundMusic';
 
 export default function ExerciseSettings() {
   const navigate = useNavigate();
@@ -17,9 +18,19 @@ export default function ExerciseSettings() {
   
   const [selectedDuration, setSelectedDuration] = useState(30);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [selectedTrackId, setSelectedTrackId] = useState('brassbeat');
+  const [backgroundVolume, setBackgroundVolume] = useState(30); // 0-100
 
   const handlePlay = () => {
-    navigate('/exercise', { state: { numCosmos, duration: selectedDuration, soundEnabled } });
+    navigate('/exercise', { 
+      state: { 
+        numCosmos, 
+        duration: selectedDuration, 
+        soundEnabled, 
+        backgroundTrackId: selectedTrackId,
+        backgroundVolume 
+      } 
+    });
   };
 
   const handleHelp = () => {
@@ -48,8 +59,23 @@ export default function ExerciseSettings() {
         <div className="grid grid-cols-2 gap-6 mb-8">
           <div>
             <div className="text-xs text-gray-500 font-semibold mb-1">MUSIC TRACK</div>
-            <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-base font-medium">
-              <span className="mr-2 text-yellow-500 text-xl">🎵</span> Brass Beat
+            <div className="relative">
+              <select
+                value={selectedTrackId}
+                onChange={(e) => setSelectedTrackId(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-base font-medium appearance-none cursor-pointer hover:bg-gray-100 transition-colors"
+              >
+                {BACKGROUND_TRACKS.map(track => (
+                  <option key={track.id} value={track.id}>
+                    {track.name}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
           </div>
           <div>
@@ -97,6 +123,21 @@ export default function ExerciseSettings() {
               ) : (
                 <span className="text-2xl text-gray-400">🔇</span>
               )}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-gray-500 font-semibold mb-1">BACKGROUND VOLUME</div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm">🔈</span>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={backgroundVolume}
+                onChange={(e) => setBackgroundVolume(parseInt(e.target.value))}
+                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+              />
+              <span className="text-sm w-8 text-right">{backgroundVolume}%</span>
             </div>
           </div>
         </div>
