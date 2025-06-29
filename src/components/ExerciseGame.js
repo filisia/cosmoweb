@@ -63,6 +63,12 @@ export default function ExerciseGame() {
     // console.log(`[ExerciseGame] 🎯 activeDevice:`, activeDevice);
     // console.log(`[ExerciseGame] 🎯 activeIndex: ${activeIndex}, cosmosToUse:`, cosmosToUse.map(d => d.id));
     
+    // Don't process button presses if game is over
+    if (gameOver) {
+      console.log(`[ExerciseGame] ❌ Button press ignored - game is over`);
+      return;
+    }
+    
     if (!activeDevice || deviceId !== activeDevice.id) {
       console.log(`[ExerciseGame] ❌ Button press ignored - deviceId mismatch or no active device`);
       console.log(`[ExerciseGame] ❌ Expected: ${activeDevice?.id}, Got: ${deviceId}`);
@@ -75,9 +81,14 @@ export default function ExerciseGame() {
     
     setScore(s => s + 1);
     setActiveIndex(i => (i + 1) % cosmosToUse.length);
-  }, [activeDevice, cosmosToUse, score, activeIndex, playMIDINote]);
+  }, [activeDevice, cosmosToUse, score, activeIndex, playMIDINote, gameOver]);
 
   const checkButtonStates = useCallback(() => {
+    // Don't check button states if game is over
+    if (gameOver) {
+      return;
+    }
+    
     if (!gameStarted || !activeDevice || !deviceValues[activeDevice.id]) {
       console.log(`[ExerciseGame] 🔍 checkButtonStates skipped:`, {
         gameStarted,
@@ -132,14 +143,14 @@ export default function ExerciseGame() {
     
     // Update previous state
     previousButtonStates.current[activeDevice.id] = currentButtonState;
-  }, [gameStarted, activeDevice, deviceValues, handleButtonPress]);
+  }, [gameStarted, activeDevice, deviceValues, handleButtonPress, gameOver]);
 
   // Check button states immediately when device values change
   useEffect(() => {
-    if (gameStarted && activeDevice && deviceValues[activeDevice.id]) {
+    if (gameStarted && !gameOver && activeDevice && deviceValues[activeDevice.id]) {
       checkButtonStates();
     }
-  }, [deviceValues, gameStarted, activeDevice, checkButtonStates]);
+  }, [deviceValues, gameStarted, activeDevice, checkButtonStates, gameOver]);
 
   useEffect(() => {
     if (gameOver) return;
@@ -222,6 +233,19 @@ export default function ExerciseGame() {
   // Light up only the active device
   useEffect(() => {
     if (gameStarted && cosmosToUse.length > 0) {
+      // If game is over, turn off all devices
+      if (gameOver) {
+        console.log(`[ExerciseGame] 💡 Game over - turning off all devices`);
+        cosmosToUse.forEach((device, idx) => {
+          if (currentLightingState.current[device.id] !== 0) {
+            console.log(`[ExerciseGame] 💡 Turning off device ${device.id} (index ${idx})`);
+            wsService.setLuminosity(device.id, 0);
+            currentLightingState.current[device.id] = 0;
+          }
+        });
+        return;
+      }
+      
       console.log(`[ExerciseGame] 💡 Setting device lighting - Active index: ${activeIndex}, Total devices: ${cosmosToUse.length}`);
       cosmosToUse.forEach((device, idx) => {
         const shouldBeLit = idx === activeIndex;
@@ -237,7 +261,7 @@ export default function ExerciseGame() {
         }
       });
     }
-  }, [activeIndex, gameStarted]); // Removed cosmosToUse dependency to prevent unnecessary re-runs
+  }, [activeIndex, gameStarted, gameOver]); // Added gameOver dependency
 
   // --- UI ---
   if (gameOver) {
