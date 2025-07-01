@@ -18,6 +18,7 @@ This documentation is organized to help web developers understand and extend the
 
 ### 03-API - Message Protocols & Specifications
 - **[03-API-websocket-message-protocol.md](./03-API-websocket-message-protocol.md)** - Complete WebSocket message protocol specification
+- **[03-API-bridge-communication-guide.md](./03-API-bridge-communication-guide.md)** - ✅ **NEW**: Complete API guide for communicating with Cosmoid Bridge
 - **[03-API-device-characteristics.md](./03-API-device-characteristics.md)** - Device characteristic operations and UUIDs
 - **[03-API-lock-unlock-protocol.md](./03-API-lock-unlock-protocol.md)** - Device lock/unlock API specification
 
@@ -85,8 +86,9 @@ src/
 
 ### For Device Integration
 1. **Review**: [01-INTEGRATION-device-management.md](./01-INTEGRATION-device-management.md) - Device lifecycle
-2. **API**: [03-API-websocket-message-protocol.md](./03-API-websocket-message-protocol.md) - Message specifications
-3. **Debug**: [04-DEVELOPMENT-troubleshooting.md](./04-DEVELOPMENT-troubleshooting.md) - Common issues
+2. **API**: [03-API-bridge-communication-guide.md](./03-API-bridge-communication-guide.md) - Complete bridge communication guide
+3. **Protocol**: [03-API-websocket-message-protocol.md](./03-API-websocket-message-protocol.md) - Message specifications
+4. **Debug**: [04-DEVELOPMENT-troubleshooting.md](./04-DEVELOPMENT-troubleshooting.md) - Common issues
 
 ## 🔗 **Related Documentation**
 
@@ -132,6 +134,7 @@ For questions about WebSocket integration, button press handling, or UI developm
 
 ### 03-API
 - [03-API-websocket-message-protocol.md](./03-API-websocket-message-protocol.md)
+- [03-API-bridge-communication-guide.md](./03-API-bridge-communication-guide.md)
 - [03-API-device-characteristics.md](./03-API-device-characteristics.md)
 - [03-API-lock-unlock-protocol.md](./03-API-lock-unlock-protocol.md)
 
