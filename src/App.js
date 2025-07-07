@@ -10,6 +10,7 @@ import { WebSocketProvider } from './contexts/WebSocketContext';
 import { GameSettingsProvider } from './contexts/GameSettingsContext';
 import ExerciseSettings from './components/ExerciseSettings';
 import ExerciseGame from './components/ExerciseGame';
+import cosmoLogo from './assets/images/cosmo_logo.png';
 
 function App() {
   // Define colors array for the HomePage circles
@@ -21,8 +22,11 @@ function App() {
         <Router>
           <div className="min-h-screen bg-gray-100">
             <nav className="bg-white shadow-lg">
-              <div className="max-w-7xl mx-auto px-4">
-                <div className="flex justify-center">
+              <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
+                <div className="flex items-center gap-6">
+                  <img src={cosmoLogo} alt="Cosmo Logo" style={{ width: 80, objectFit: 'contain' }} />
+                </div>
+                <div className="flex justify-center flex-1">
                   <ul className="flex space-x-8 py-4">
                     <li>
                       <Link 

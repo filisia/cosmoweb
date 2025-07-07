@@ -75,7 +75,6 @@ function HomePage({ colors }) {
   // Always render the hero section with logo and info
   const HeroSection = (
     <div className="bg-white rounded-xl shadow-md p-8 mb-8 flex flex-col md:flex-row items-center gap-8">
-      <img src={cosmoLogo} alt="Cosmo Logo" width={164} height={32} style={{ width: 164, height: 32, objectFit: 'contain' }} className="mb-4 md:mb-0" />
       <div>
         <h1 className="text-3xl font-bold text-purple-800 mb-2">Welcome to Cosmoweb</h1>
         <p className="text-gray-700 text-lg mb-2 max-w-2xl">
