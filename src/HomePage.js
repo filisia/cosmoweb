@@ -72,60 +72,51 @@ function HomePage({ colors }) {
     return 'status-available';
   };
 
+  // Always render the hero section with logo and info
+  const HeroSection = (
+    <div className="bg-white rounded-xl shadow-md p-8 mb-8 flex flex-col md:flex-row items-center gap-8">
+      <img src={cosmoLogo} alt="Cosmo Logo" width={164} height={32} style={{ width: 164, height: 32, objectFit: 'contain' }} className="mb-4 md:mb-0" />
+      <div>
+        <h1 className="text-3xl font-bold text-purple-800 mb-2">Welcome to Cosmoweb</h1>
+        <p className="text-gray-700 text-lg mb-2 max-w-2xl">
+          Cosmoweb is a modern web interface for Filisia's Cosmo devices, enabling real-time, interactive experiences for therapy, education, and play. Connect your Cosmo devices via the Cosmoid Bridge and control them directly from your browser.
+        </p>
+        <p className="text-gray-600 text-base max-w-2xl">
+          <span className="font-semibold">How it works:</span> <br/>
+          <span className="inline-block mt-1">
+            <span className="font-medium text-purple-700">1.</span> Start the <span className="font-semibold">Cosmoid Bridge</span> app on your computer.<br/>
+            <span className="font-medium text-purple-700">2.</span> Power on your Cosmo devices and keep them nearby.<br/>
+            <span className="font-medium text-purple-700">3.</span> Devices will appear below when connected.<br/>
+            <span className="font-medium text-purple-700">4.</span> Explore games and activities from the menu!
+          </span>
+        </p>
+        <a
+          href="https://github.com/filisia/cosmowebdocs"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block mt-4 text-blue-600 hover:underline text-sm"
+        >
+          Learn more in the documentation
+        </a>
+      </div>
+    </div>
+  );
+
   if (!wsConnected || connectionError) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="flex justify-center">
-            <svg className="w-16 h-16 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" />
-            </svg>
-          </div>
-          
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Connection Status
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center py-12 sm:px-6 lg:px-8">
+        {HeroSection}
+        <div className="bg-white rounded-xl shadow-md p-8 flex flex-col items-center max-w-lg w-full">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">
+            Waiting for Cosmoid Bridge...
           </h2>
-          
-          <div className="mt-8 bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-            <div className="space-y-6">
-              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-yellow-800">
-                      Connection Required
-                    </h3>
-                    <div className="mt-2 text-sm text-yellow-700">
-                      <p>Unable to connect to Cosmoid Bridge. Please follow these steps:</p>
-                      <ul className="list-disc pl-5 mt-2 space-y-1">
-                        <li>Ensure the Cosmoid Bridge application is running on your computer. If you haven't installed it yet, you can download it from <a href="https://drive.google.com/file/d/1QXPr67vYiePTso6lsO33KBVpTza1x6_6/view?usp=sharing" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'underline', color: 'blue' }}>this link</a>.</li>
-                        <li>Check that you're using a supported browser (Chrome or Edge)</li>
-                        <li>Verify that no firewall is blocking the connection</li>
-                        <li>Try refreshing this page</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-center">
-                <button
-                  onClick={() => wsService.connect()}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Retry Connection
-                </button>
-              </div>
-            </div>
-          </div>
+          <p className="text-gray-600 text-center text-base max-w-md">
+            Cosmoweb is trying to connect to the Cosmoid Bridge on your computer.<br />
+            <span className="block mt-2">Please make sure the Cosmoid Bridge application is running.<br />
+            If you haven't installed it yet, <a href="https://drive.google.com/file/d/1QXPr67vYiePTso6lsO33KBVpTza1x6_6/view?usp=sharing" target="_blank" rel="noopener noreferrer" className="underline text-blue-600">download it here</a>.</span>
+            <span className="block mt-2">Use a supported browser (Chrome or Edge).</span>
+            <span className="block mt-2">If the bridge is running and you still see this message, try refreshing the page.</span>
+          </p>
         </div>
       </div>
     );
@@ -133,60 +124,74 @@ function HomePage({ colors }) {
 
   return (
     <div className="cosmo-container">
-      <div className="cosmo-logo">
-        <img src={cosmoLogo} alt="Cosmo Logo" className="cosmo-logo-image" />
-      </div>
-      
-      <div className="cosmo-header-controls">
-        <h2 className="cosmo-available-devices-title">Available Devices</h2>
-        <button 
-          onClick={handleLockDevices}
-          className={`cosmo-button cosmo-lock-button ${lockState.isLocked ? 'locked' : ''}`}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-          </svg>
-          {lockState.isLocked ? 'Unlock Devices' : 'Lock Devices'}
-        </button>
-      </div>
-      
-      <div className="cosmo-devices-table-container">
-        <table className="cosmo-devices-table">
-          <thead>
-            <tr>
-              <th>Serial No.</th>
-              <th>Firmware</th>
-              <th>Battery</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {connectedDevices.length === 0 ? (
+      {HeroSection}
+      {/* DEVICE TABLE SECTION */}
+      <div className="bg-white rounded-xl shadow p-6 mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2">
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-800">Connected Cosmo Devices</h2>
+            <p className="text-gray-500 text-sm mt-1">These are the Cosmo devices currently detected by your browser. Make sure your devices are powered on and nearby.</p>
+          </div>
+          <div className="flex items-center gap-3 mt-2 md:mt-0">
+            <button
+              onClick={handleScanDevices}
+              className="cosmo-button cosmo-scan-button"
+              title="Scan for new devices"
+            >
+              <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582M20 20v-5h-.581M5 19a9 9 0 0114 0M5 5a9 9 0 0114 0" />
+              </svg>
+              Scan for Devices
+            </button>
+            <span className="cosmo-last-scan-time text-xs text-gray-400">Last scan: {formatTime(lastScanTime)}</span>
+            <button 
+              onClick={handleLockDevices}
+              className={`cosmo-button cosmo-lock-button ${lockState.isLocked ? 'locked' : ''}`}
+              title={lockState.isLocked ? 'Unlock all devices' : 'Lock all devices'}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+              {lockState.isLocked ? 'Unlock Devices' : 'Lock Devices'}
+            </button>
+          </div>
+        </div>
+        <div className="cosmo-devices-table-container">
+          <table className="cosmo-devices-table">
+            <thead>
               <tr>
-                <td colSpan="5" className="cosmo-no-devices">
-                  No devices found. Make sure your Cosmo devices are powered on and nearby.
-                </td>
+                <th>Serial No.</th>
+                <th>Firmware</th>
+                <th>Battery</th>
+                <th>Status</th>
               </tr>
-            ) : (
-              connectedDevices.map((device) => (
-                <tr key={device.id}>
-                  <td>{device.serialNumber || 'N/A'}</td>
-                  <td>{device.firmwareVersion || 'N/A'}</td>
-                  <td>{device.batteryLevel ? `${device.batteryLevel}%` : 'N/A'}</td>
-                  <td>
-                    <span className={getStatusClass(device)}>
-                      {getDeviceStatus(device)}
-                    </span>
+            </thead>
+            <tbody>
+              {connectedDevices.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="cosmo-no-devices">
+                    No devices found. Make sure your Cosmo devices are powered on and nearby.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                connectedDevices.map((device) => (
+                  <tr key={device.id}>
+                    <td>{device.serialNumber || device.serial || 'N/A'}</td>
+                    <td>{device.firmwareVersion || device.firmware || 'N/A'}</td>
+                    <td>{device.batteryLevel !== undefined ? `${device.batteryLevel}%` : 'N/A'}</td>
+                    <td>
+                      <span className={getStatusClass(device)}>
+                        {getDeviceStatus(device)}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
-      
-      
     </div>
   );
 }
