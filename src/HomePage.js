@@ -132,17 +132,6 @@ function HomePage({ colors }) {
             <p className="text-gray-500 text-sm mt-1">These are the Cosmo devices currently detected by your browser. Make sure your devices are powered on and nearby.</p>
           </div>
           <div className="flex items-center gap-3 mt-2 md:mt-0">
-            <button
-              onClick={handleScanDevices}
-              className="cosmo-button cosmo-scan-button"
-              title="Scan for new devices"
-            >
-              <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582M20 20v-5h-.581M5 19a9 9 0 0114 0M5 5a9 9 0 0114 0" />
-              </svg>
-              Scan for Devices
-            </button>
-            <span className="cosmo-last-scan-time text-xs text-gray-400">Last scan: {formatTime(lastScanTime)}</span>
             <button 
               onClick={handleLockDevices}
               className={`cosmo-button cosmo-lock-button ${lockState.isLocked ? 'locked' : ''}`}
